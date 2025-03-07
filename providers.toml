@@ -37,6 +37,7 @@ beta_base_url = "https://chat.ecnu.edu.cn/open/api/v1"
 chat_model_id = "ecnu-max"
 coder_model_id = ""
 reasoner_model_id = "ecnu-reasoner"
+default_model_type = "reasoner"
 
 [providers.lmstudio]
 description = "LM Studio Local"
