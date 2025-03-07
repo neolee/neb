@@ -12,5 +12,6 @@ dependencies = [
 
 [tool.logfire]
 project_name = "neb-logfire"
+send_to_logfire = 'if-token-present'
 console_min_log_level = "warning"
 console_show_project_link = "False"

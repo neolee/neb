@@ -1,11 +1,6 @@
 from pydantic_ai import Agent, RunContext
 import model
-
-
-import logfire
-
-logfire.configure()
-Agent.instrument_all()
+import instrument
 
 
 roulette_agent = Agent(
@@ -16,6 +11,7 @@ roulette_agent = Agent(
         'Use the `roulette_wheel` function to see if the '
         'customer has won based on the number they provide.'
     ),
+    instrument=True,
 )
 
 
@@ -26,9 +22,11 @@ async def roulette_wheel(ctx: RunContext[int], square: int) -> str:
 
 
 # run the agent
-success_number = 18
-result = roulette_agent.run_sync('Put my money on square eighteen', deps=success_number)
+import random
+success_number = random.randint(1, 5)
+print("winning number: ", success_number)
+result = roulette_agent.run_sync('Put my money on square two', deps=success_number)
 print(result.data)
 
-result = roulette_agent.run_sync('I bet five is the winner', deps=success_number)
+result = roulette_agent.run_sync('I bet four is the winner', deps=success_number)
 print(result.data)
