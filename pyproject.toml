@@ -5,6 +5,7 @@ description = "Seek the real power of AI agents"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "httpx[socks]>=0.28.1",
     "pydantic-ai>=0.0.35",
     "rtoml>=0.12.0",
 ]
