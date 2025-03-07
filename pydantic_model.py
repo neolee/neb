@@ -1,13 +1,9 @@
-import os
-from typing import cast
 from pydantic import BaseModel
+from pydantic_ai import Agent
+import model
 
 import instrument
-
-from pydantic_ai import Agent
-from pydantic_ai.models import KnownModelName
-
-import model
+instrument.init()
 
 
 class MyModel(BaseModel):

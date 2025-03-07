@@ -1,6 +1,8 @@
 from pydantic_ai import Agent, RunContext
 import model
+
 import instrument
+instrument.init()
 
 
 roulette_agent = Agent(
@@ -13,7 +15,6 @@ roulette_agent = Agent(
     ),
     instrument=True,
 )
-
 
 @roulette_agent.tool
 async def roulette_wheel(ctx: RunContext[int], square: int) -> str:
