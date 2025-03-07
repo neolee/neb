@@ -6,6 +6,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "httpx[socks]>=0.28.1",
-    "pydantic-ai>=0.0.35",
+    "pydantic-ai[logfire]>=0.0.35",
     "rtoml>=0.12.0",
 ]
+
+[tool.logfire]
+project_name = "neb-logfire"
+console_min_log_level = "warning"
+console_show_project_link = "False"

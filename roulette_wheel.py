@@ -2,6 +2,12 @@ from pydantic_ai import Agent, RunContext
 import model
 
 
+import logfire
+
+logfire.configure()
+Agent.instrument_all()
+
+
 roulette_agent = Agent(
     model=model.default,
     deps_type=int,
