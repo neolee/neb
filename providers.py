@@ -2,12 +2,11 @@ import os
 import rtoml
 
 
-
 with open("providers.toml", "r") as f:
     data = rtoml.load(f)
 
-default_provider_name: str = data["default"]["provider"]
-default_model_type: str = data["default"]["model_type"]
+default_provider_name: str = data["defaults"]["provider"]
+default_model_type: str = data["defaults"]["model_type"]
 
 
 class Provider:
@@ -34,12 +33,19 @@ class Provider:
             case _: return self.chat_model_id
 
 
+configs = data["providers"]
 def provider_by_name(name: str=default_provider_name) -> Provider:
-    config: dict = data["providers"][name]
+    config: dict = configs[name]
     return Provider(config)
 
-
 default_provider = provider_by_name()
+
+
+aliases = data["aliases"]
+def provider_by_alias(alias: str) -> Provider:
+    name = aliases[alias]
+    return provider_by_name(name)
+
 
 providers = []
 for name in data["providers"]:

@@ -57,6 +57,12 @@ chat_model_id = "qwen2.5:14b"
 coder_model_id = "qwen2.5-coder:32b"
 reasoner_model_id = ""
 
-[default]
+[defaults]
 provider = "aliyun_qwen"
 model_type = "chat"
+
+[aliases]
+deepseek = "deepseek"
+qwen = "aliyun_qwen"
+lmstudio = "lmstudio"
+ollama = "ollama"
