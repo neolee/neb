@@ -1,0 +1,61 @@
+description = "Large Language Model As A Service Providers"
+
+[providers]
+
+[providers.deepseek]
+description = "DeepSeek Official"
+api_key_name = "DEEPSEEK_API_KEY"
+base_url = "https://api.deepseek.com"
+beta_base_url = "https://api.deepseek.com/beta"
+chat_model_id = "deepseek-chat"
+coder_model_id = "deepseek-chat"
+reasoner_model_id = "deepseek-reasoner"
+
+[providers.aliyun_qwen]
+description = "Qwen Official (Aliyun)"
+api_key_name = "ALIYUN_API_KEY"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+beta_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+chat_model_id = "qwen-max-latest"
+coder_model_id = "qwen-coder-plus-latest"
+reasoner_model_id = "qwq-plus-latest"
+
+[providers.aliyun_deepseek]
+description = "DeepSeek (Aliyun)"
+api_key_name = "ALIYUN_API_KEY"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+beta_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+chat_model_id = "deepseek-v3"
+coder_model_id = "deepseek-v3"
+reasoner_model_id = "deepseek-r1"
+
+[providers.ecnu]
+description = "ECNU"
+api_key_name = "ECNU_API_KEY"
+base_url = "https://chat.ecnu.edu.cn/open/api/v1"
+beta_base_url = "https://chat.ecnu.edu.cn/open/api/v1"
+chat_model_id = "ecnu-max"
+coder_model_id = ""
+reasoner_model_id = "ecnu-reasoner"
+
+[providers.lmstudio]
+description = "LM Studio Local"
+api_key_name = "LM_STUDIO_API_KEY"
+base_url = "http://127.0.0.1:1234/v1"
+beta_base_url = "http://127.0.0.1:1234/v1"
+chat_model_id = "default"
+coder_model_id = "default"
+reasoner_model_id = "default"
+
+[providers.ollama]
+description = "Ollama Local"
+api_key_name = "OLLAMA_API_KEY"
+base_url = "http://localhost:11434/v1"
+beta_base_url = "http://localhost:11434/v1"
+chat_model_id = "qwen2.5:14b"
+coder_model_id = "qwen2.5-coder:32b"
+reasoner_model_id = ""
+
+[default]
+provider = "aliyun_qwen"
+model_type = "chat"
