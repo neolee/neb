@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "asyncpg>=0.30.0",
+    "devtools>=0.12.2",
     "httpx[socks]>=0.28.1",
     "logfire[asyncpg]>=3.7.1",
     "pydantic-ai[logfire]>=0.0.35",
