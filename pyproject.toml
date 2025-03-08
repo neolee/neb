@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "httpx[socks]>=0.28.1",
+    "psycopg>=3.2.5",
     "pydantic-ai[logfire]>=0.0.35",
     "rtoml>=0.12.0",
 ]
