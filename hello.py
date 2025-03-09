@@ -1,6 +1,6 @@
 from pydantic_ai import Agent
 
-import model
+import mal.pydantic_ai.model as model
 
 
 agent = Agent(

@@ -24,7 +24,7 @@ class Deps:
     openai: AsyncOpenAI
     pool: asyncpg.Pool
 
-from providers import provider_by_alias
+from mal.providers import provider_by_alias
 
 # use local ollama as openai compatible service
 ollama_provider = provider_by_alias("ollama")
@@ -39,7 +39,7 @@ import instrument
 instrument.init()
 logfire.instrument_openai(ollama_openai)
 
-import model
+import mal.pydantic_ai.model as model
 rag_agent = Agent(model=model.default, deps_type=Deps)
 
 
