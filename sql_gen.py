@@ -20,7 +20,7 @@ from typing_extensions import TypeAlias
 from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai.format_as_xml import format_as_xml
 
-import model
+import mal.pydantic_ai.model as model
 
 
 DB_SCHEMA = """

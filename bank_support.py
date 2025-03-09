@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
-import model
+import mal.pydantic_ai.model as model
 
 import instrument
 instrument.init()

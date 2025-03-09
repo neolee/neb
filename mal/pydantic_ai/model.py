@@ -1,7 +1,7 @@
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from providers import Provider, default_model_type, provider_by_alias
+from mal.providers import Provider, default_model_type, provider_by_alias
 
 
 def openai_provider(provider: Provider, is_beta=False) -> OpenAIProvider:

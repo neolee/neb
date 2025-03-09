@@ -7,10 +7,10 @@ from typing import Any
 
 from httpx import AsyncClient
 
-import logfire
 from pydantic_ai import Agent, ModelRetry, RunContext
-import model
+import mal.pydantic_ai.model as model
 
+import logfire
 import instrument
 instrument.init()
 
