@@ -69,6 +69,14 @@ hello_agent = Agent(
 )
 ```
 
+### Model Adapter for OpenAI
+
+> `mal/openai/model.py`
+
+Simple wrappers for OpenAI RESTful API. Just for *separation of concerns*.
+
+Currently only the `OpenAI` client is supported, the asynchronous `AsyncOpenAI` API is work in progress. 
+
 ## Agents
 
 ### PydanticAI Samples
