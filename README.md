@@ -113,6 +113,8 @@ Check the *sample list* section below for more details on all samples.
 - `bank_support.py` `bank_db.py`: a customer supporting *agent* demonstrating RDBMS/MIS integration
 - `sql_gen.py`: a logging analyzer demonstrating RDBMS integration
 - `rag.py`: basic RAG build/retrieve/query process using local embedding model and `pgvector`
+- `chat_app.*`: a simple chat app with FastAPI, chat history stored in a SQLite DB 
+- `question_graph.py`: ask and evaluate agents with generated mermaid graph
 
 ### Reusable Agents
 
