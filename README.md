@@ -1,21 +1,21 @@
 # Nebuchadnezzar
 
-A project to seek the real power of AI agents. Powered by `pydantic-ai` and `logfire`.
+A project aimed at exploring the true potential of AI agents. It is powered by `MAL` and `pydantic-ai`.
 
 ## LLM Abstraction Layer (MAL)
 
-**MAL**(*Large Language Model Abstraction Layer*) is a framework to simplify configuration and adaptation of applications using different language model services. It consists of a service provider configuration framework and adaptation layer(s) for popular agent frameworks.
+MAL (Language Model Abstraction Layer) is a framework designed to streamline the configuration and integration of applications across various language model services. It includes a service provider configuration framework and adaptation layers tailored for popular agent frameworks.
 
-NOTE: Currently **MAL** only supports OpenAI compatible API service providers.
+Note: At present, MAL supports only OpenAI-compatible API service providers.
 
 ### Service Provider Configuration
 
 > `providers.toml` `mal/providers.py`
 
-- `providers.toml`: contains multiple provider configurations that you can access by name and alias, and other extensible attributes.
-- `providers.py`: Python wrapper for the configuration file, providing easy access to the provider configurations and other settings. 
+- `providers.toml`: Contains multiple provider configurations that you can access by name or alias, along with other extensible attributes.
+- `providers.py`: A Python wrapper for the configuration file, offering easy access to provider settings and additional options.
 
-To use this framework, just add your OpenAI-compatible service provider as a configuration group as below:
+To use this framework, simply add your OpenAI-compatible service provider as a configuration group as shown below:
 
 ``` toml
 [providers.deepseek]
@@ -28,24 +28,29 @@ coder_model_id = "deepseek-chat"
 reasoner_model_id = "deepseek-reasoner"
 ```
 
-You can define aliases in the `[aliases]` group, or change system default settings in the `[defaults]` group. Then you can import `mal.providers` and use the following functions and/or variables for `Provider` object(s) for your provider(s):
+You can define aliases within the `[aliases]` section or modify system default settings in the `[defaults]` section. Afterward, you can import `mal.providers` and utilize the following functions and variables for managing `Provider` objects:
 
-> `provider_by_name` `provider_by_alias` `providers` `default_provider`
+- `provider_by_name`
+- `provider_by_alias`
+- `providers`
+- `default_provider`
 
-Most configuration items are self explained, a few more notes:
-- The group name without the `providers` prefix is the provider's `name` (`deepseek` in the sample above). You can use it in the `provider_by_name` function to get the corresponding `Provider` object.
-- For security concerns real API keys should not be stored in the configuration file. The keys should be stored as environment variables and referenced by name in the configuration file (the `api_key_name` field). The real key will be in the `Provider` objects when you get them by calling the framework.
-- Fields `beta_base_url` and any `model_id` other than `chat_model_id` are optional. Use them only when your provider matches related features.
+Most configuration options are self-explanatory; however, a few additional notes are worth mentioning:
+- The group name without the `providers` prefix represents the provider's name (e.g., `deepseek`). You can use this name in the `provider_by_name` function to retrieve the corresponding `Provider` object.
+- For security reasons, avoid storing real API keys directly in the configuration file. Instead, store these keys as environment variables and reference them by their names within the configuration file using the `api_key_name` field. The actual key will be accessible through the `Provider` objects when you retrieve them via the framework.
+- Fields like `beta_base_url` and any `model_id` other than `chat_model_id` are optional. Use these fields only if your provider supports the corresponding features.
 
 ### Model Adapter for PydanticAI
 
 > `mal/pydantic_ai/model.py`
 
-The [PydanticAI framework](https://ai.pydantic.dev/) (`pydantic_ai`) uses `base_url` and `api_key` to build a `OpenAIProvider` object, then use this `OpenAIProvider` object and `model_name` to build a `OpenAIModel` object, which is needed in *agent* construction (using `model=` parameter). 
+The [PydanticAI framework](https://ai.pydantic.dev/) (`pydantic_ai`) constructs an `OpenAIProvider` object using the parameters `base_url` and `api_key`. This `OpenAIProvider` is then utilized along with `model_name` to create an `OpenAIModel` object, which is essential for constructing agents (via the `model=` parameter).
 
-As bridge between **MAL** and `pydantic_ai`, `mal.pydantic_ai.model` does all the work for you. Just import `mal.pydantic_ai.model` and use the following functions:
+As a bridge between **MAL** and `pydantic_ai`, the module `mal.pydantic_ai.model` handles all the necessary tasks. Simply import this module and use the following functions:
 
-> `model_by_provider` `model_by_alias` `ollama_model`
+- `model_by_provider`
+- `model_by_alias`
+- `ollama_model`
 
 ...or any pre-defined model objects such as:
 
@@ -73,15 +78,15 @@ hello_agent = Agent(
 
 > `mal/openai/model.py`
 
-Simple wrappers for OpenAI RESTful API. Just for *separation of concerns*.
+Simplified interfaces for interacting with the OpenAI RESTful API, designed primarily to achieve separation of concerns.
 
-Currently only the `OpenAI` client is supported, the asynchronous `AsyncOpenAI` API is work in progress. 
+At present, support is limited to the `OpenAI` client, while the development of the asynchronous `AsyncOpenAI` API is still ongoing.
 
 ## Agents
 
 ### PydanticAI Samples
 
-Most of PydanticAI samples are built for OpenAI models. They've been migrated to use **MAL** here, which makes them provider independent. So you can try them on almost any LLM, as long as it provides OpenAI compatible API. 
+The majority of PydanticAI examples are designed for OpenAI models but have been updated to utilize **MAL**, making them agnostic to the specific model provider. This allows you to use these samples across nearly any large language model that supports an OpenAI-compatible API.
 
 #### Dependencies
 
@@ -97,24 +102,25 @@ dependencies = [
 ```
 
 Additional technical details:
-- The `logfire` integration is completely optional (but very amazing indeed). If you wish to omit this integration just remove *import* of `instrument` module and call of `instrument.init()` and, in a few samples (`rag.py` `weather.py`), anything of `logfire` reference.
-- Several samples (`bank_support.py` `rag.py` `sql_gen.py`) need database connection. I use my local `postgresql` server and `asyncpg` lib to access it asynchronously (in agent). You can change the connection parameters (or server DSN) and database name to match your environment.
 
-Check the *sample list* section below for more details on all samples.
+- The `logfire` integration is entirely optional, though highly recommended. To exclude this integration, simply remove the import of the `instrument` module and the call to `instrument.init()`. Additionally, in a few sample files (`rag.py`, `weather.py`), you should also eliminate any references to `logfire`.
+- Several samples (`bank_support.py`, `rag.py`, `sql_gen.py`) require a database connection. I utilize my local `postgresql` server and the `asyncpg` library for asynchronous access (in the agent). You can adjust the connection parameters or data source name (DSN) and database name to suit your environment.
+
+For more information on each sample, refer to the *sample list* section below.
 
 #### Sample List
-- `hello.py`: just the *hello world* in agent world
-- `stream_hello.py`: an asynchronous version of *hello world* 
-- `roulette_wheel.py`: a roulette wheel simulator demonstrating *tool calling* and *context* mechanism
-- `pydantic_model.py`: `pydantic` data validation integrated in *agents*
-- `stream_markdown.py`: using `rich` to display streamed Markdown output from *agent*
-- `stream_whales.py`: using `rich` to display streamed `pydantic` object output from *agent*
-- `weather.py`: multiple *tools calling* 3rd party RESTful API in *agent*
-- `bank_support.py` `bank_db.py`: a customer supporting *agent* demonstrating RDBMS/MIS integration
-- `sql_gen.py`: a logging analyzer demonstrating RDBMS integration
-- `rag.py`: basic RAG build/retrieve/query process using local embedding model and `pgvector`
-- `chat_app.*`: a simple chat app with FastAPI, chat history stored in a SQLite DB 
-- `question_graph.py`: ask and evaluate agents with generated mermaid graph
+- `hello.py`: A basic "Hello World" example for agents.
+- `stream_hello.py`: An asynchronous version of the classic "Hello World."
+- `roulette_wheel.py`: A roulette wheel simulator that demonstrates tool calling and context management within agents.
+- `pydantic_model.py`: Integrates Pydantic data validation into agent functionalities.
+- `stream_markdown.py`: Uses `rich` to display streamed Markdown output from an agent.
+- `stream_whales.py`: Utilizes `rich` to stream and display Pydantic objects generated by an agent.
+- `weather.py`: An agent that calls multiple third-party RESTful APIs for weather information.
+- `bank_support.py` and `bank_db.py`: A customer support agent demonstrating integration with RDBMS/MIS systems.
+- `sql_gen.py`: Demonstrates RDBMS integration through a logging analyzer tool.
+- `rag.py`: Implements a basic Retrieval-Augmented Generation (RAG) process using a local embedding model and `pgvector`.
+- `chat_app.*`: A simple chat application built with FastAPI, storing chat history in a SQLite database.
+- `question_graph.py`: Allows asking and evaluating agents through the generation of Mermaid graphs.
 
 ### Reusable Agents
 
