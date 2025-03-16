@@ -142,6 +142,7 @@ async def insert_doc_section(
             section.title,
             section.content,
             embedding_json,
+            timeout=30 # to avoid type check warning due to asyncpg source code
         )
 
 
