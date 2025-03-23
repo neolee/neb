@@ -57,6 +57,7 @@ async def retrieve(context: RunContext[Deps], search_query: str) -> str:
         embedding = await context.deps.openai.embeddings.create(
             input=search_query,
             model=ollama_embedding_model,
+            timeout=30.0
         )
 
     assert len(embedding.data) == 1, (
@@ -130,6 +131,7 @@ async def insert_doc_section(
             embedding = await openai.embeddings.create(
                 input=section.embedding_content(),
                 model=ollama_embedding_model,
+                timeout=30.0
             )
         assert len(embedding.data) == 1, (
             f"Expected 1 embedding, got {len(embedding.data)}, doc section: {section}"
