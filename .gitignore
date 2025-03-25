@@ -4,6 +4,8 @@ log.txt
 **/log.txt
 **/*.log
 
+.projectile-cache*
+
 .ipynb_checkpoints/
 **/.ipynb_chechpoints
 __pycache__/
