@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "asyncpg>=0.30.0",
     "devtools>=0.12.2",
+    "duckduckgo-search>=7.5.3",
     "fastapi>=0.115.11",
     "httpx[socks]>=0.28.1",
     "logfire[asyncpg,fastapi,sqlite3]>=3.7.1",
@@ -14,6 +15,7 @@ dependencies = [
     "pydantic-graph>=0.0.36",
     "python-multipart>=0.0.20",
     "rtoml>=0.12.0",
+    "tavily-python>=0.5.1",
     "uvicorn>=0.34.0",
 ]
 
