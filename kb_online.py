@@ -15,10 +15,10 @@ from embedders import nomic
 from rag.store.pgvector import PgVectorStore, Section
 
 kb_store = PgVectorStore(
+    embedder=nomic,
     dsn="postgresql://paradigmx@localhost",
     db="zion",
-    table="logfire_docs",
-    embedder=nomic
+    table="logfire_docs"
 )
 
 import logfire

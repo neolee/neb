@@ -1,6 +1,8 @@
+from __future__ import annotations as _annotations
+from dataclasses import dataclass
 from contextlib import asynccontextmanager
 from typing_extensions import AsyncGenerator
-from dataclasses import dataclass
+
 from asyncio import Semaphore, TaskGroup
 
 import pydantic_core
@@ -32,11 +34,11 @@ CREATE INDEX IF NOT EXISTS idx_{table}_embeddings ON {table} USING hnsw (embeddi
 """
 
 class PgVectorStore:
-    def __init__(self, dsn: str, db: str, table: str, embedder: Embedder) -> None:
+    def __init__(self, embedder: Embedder, dsn: str, db: str, table: str) -> None:
+        self.embedder = embedder
         self.dsn = dsn
         self.db = db
         self.table = table
-        self.embedder = embedder
 
     @asynccontextmanager
     async def connect(self, create_db: bool=False) -> AsyncGenerator[asyncpg.Pool, None]:
