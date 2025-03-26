@@ -1,155 +1,68 @@
 from __future__ import annotations as _annotations
+from dataclasses import dataclass
 
 import asyncio
-import re
-import sys
-import unicodedata
-from contextlib import asynccontextmanager
-from dataclasses import dataclass
 
 import httpx
 import asyncpg
 
-import pydantic_core
 from pydantic import TypeAdapter
-from typing_extensions import AsyncGenerator
-
 from pydantic_ai import RunContext
 from pydantic_ai.agent import Agent
-
 from openai import AsyncOpenAI
 
-@dataclass
-class Deps:
-    openai: AsyncOpenAI
-    pool: asyncpg.Pool
+from embedders import nomic
+from rag.store.pgvector import PgVectorStore, Section
 
-from mal.providers import provider_by_alias
-
-# use local ollama as openai compatible service
-ollama_provider = provider_by_alias("ollama")
-ollama_openai = AsyncOpenAI(
-    base_url=ollama_provider.base_url,
-    api_key=ollama_provider.api_key
-    )
-ollama_embedding_model = "nomic-embed-text"
+kb_store = PgVectorStore(
+    dsn="postgresql://paradigmx@localhost",
+    db="zion",
+    table="logfire_docs",
+    embedder=nomic
+)
 
 import logfire
 import instrument
 instrument.init()
-logfire.instrument_openai(ollama_openai)
+logfire.instrument_openai(nomic.client)
+
+
+## rag agent
+
+@dataclass
+class Deps:
+    client: AsyncOpenAI
+    pool: asyncpg.Pool
 
 import mal.pydantic_ai.model as model
 rag_agent = Agent(model=model.default, deps_type=Deps)
 
-
 @rag_agent.tool
-async def retrieve(context: RunContext[Deps], search_query: str) -> str:
+async def retrieve(context: RunContext[Deps], query: str) -> str:
     """Retrieve documentation sections based on a search query.
 
     args:
         context: the call context.
-        search_query: the search query.
+        query: the search query.
     """
-    with logfire.span(
-        "create embedding for {search_query=}", search_query=search_query
-    ):
-        embedding = await context.deps.openai.embeddings.create(
-            input=search_query,
-            model=ollama_embedding_model,
-            timeout=30.0
-        )
-
-    assert len(embedding.data) == 1, (
-        f"expected 1 embedding, got {len(embedding.data)}, doc query: {search_query!r}"
-    )
-    embedding = embedding.data[0].embedding
-    embedding_json = pydantic_core.to_json(embedding).decode()
-    rows = await context.deps.pool.fetch(
-        "SELECT url, title, content FROM doc_sections ORDER BY embedding <-> $1 LIMIT 8",
-        embedding_json,
-    )
-    return "\n\n".join(
-        f"# {row['title']}\nDocumentation URL:{row['url']}\n\n{row['content']}\n"
-        for row in rows
-    )
-
+    return await kb_store.retrieve(query, context.deps.pool, 10)
 
 async def run_agent(question: str):
     """Entry point to run the agent and perform RAG based question answering."""
     logfire.info("Asking '{question}'", question=question)
 
-    async with database_connect(False) as pool:
-        deps = Deps(openai=ollama_openai, pool=pool)
+    async with kb_store.connect() as pool:
+        deps = Deps(client=nomic.client, pool=pool)
         answer = await rag_agent.run(question, deps=deps)
     print(answer.data)
 
 
-## the rest of this file is dedicated to preparing the search database, and some utilities
+## biuld the search database (and some utilities)
+from util.logfire_docs import doc_json_url, make_doc_uri
 
-# json document from https://gist.github.com/samuelcolvin/4b5bb9bb163b1122ff17e29e48c10992
-DOCS_JSON = (
-    "https://gist.githubusercontent.com/"
-    "samuelcolvin/4b5bb9bb163b1122ff17e29e48c10992/raw/"
-    "80c5925c42f1442c24963aaf5eb1a324d47afe95/logfire_docs.json"
-)
-
-
-async def build_search_db():
-    """Build the search database."""
-    async with httpx.AsyncClient() as client:
-        response = await client.get(DOCS_JSON)
-        response.raise_for_status()
-    sections = sessions_ta.validate_json(response.content)
-
-    async with database_connect(True) as pool:
-        with logfire.span("create schema"):
-            async with pool.acquire() as conn:
-                async with conn.transaction():
-                    await conn.execute(DB_SCHEMA)
-
-        sem = asyncio.Semaphore(10)
-        async with asyncio.TaskGroup() as tg:
-            for section in sections:
-                tg.create_task(insert_doc_section(sem, ollama_openai, pool, section))
-
-
-async def insert_doc_section(
-    sem: asyncio.Semaphore,
-    openai: AsyncOpenAI,
-    pool: asyncpg.Pool,
-    section: DocsSection,
-) -> None:
-    async with sem:
-        url = section.url()
-        exists = await pool.fetchval("SELECT 1 FROM doc_sections WHERE url = $1", url)
-        if exists:
-            logfire.info("Skipping {url=}", url=url)
-            return
-
-        with logfire.span("create embedding for {url=}", url=url):
-            embedding = await openai.embeddings.create(
-                input=section.embedding_content(),
-                model=ollama_embedding_model,
-                timeout=30.0
-            )
-        assert len(embedding.data) == 1, (
-            f"Expected 1 embedding, got {len(embedding.data)}, doc section: {section}"
-        )
-        embedding = embedding.data[0].embedding
-        embedding_json = pydantic_core.to_json(embedding).decode()
-        await pool.execute(
-            "INSERT INTO doc_sections (url, title, content, embedding) VALUES ($1, $2, $3, $4)",
-            url,
-            section.title,
-            section.content,
-            embedding_json,
-            timeout=30 # to avoid type check warning due to asyncpg source code
-        )
-
-
+# data class for doc json parsing
 @dataclass
-class DocsSection:
+class DocSection:
     id: int
     parent: int | None
     path: str
@@ -157,77 +70,32 @@ class DocsSection:
     title: str
     content: str
 
-    def url(self) -> str:
-        url_path = re.sub(r"\.md$", "", self.path)
-        return (
-            f"https://logfire.pydantic.dev/docs/{url_path}/#{slugify(self.title, '-')}"
-        )
+    def uri(self) -> str:
+        return make_doc_uri(self.title, self.path)
 
     def embedding_content(self) -> str:
         return "\n\n".join((f"path: {self.path}", f"title: {self.title}", self.content))
 
+async def prepare_content() -> list[Section]:
+    sessions_ta = TypeAdapter(list[DocSection])
+    async with httpx.AsyncClient() as client:
+        response = await client.get(doc_json_url)
+        response.raise_for_status()
+    doc_sections = sessions_ta.validate_json(response.content)
+    return [Section(ds.uri(), ds.title, ds.content, ds.embedding_content())
+            for ds in doc_sections]
 
-sessions_ta = TypeAdapter(list[DocsSection])
-
-
-# pyright: reportUnknownMemberType=false
-# pyright: reportUnknownVariableType=false
-@asynccontextmanager
-async def database_connect(
-    create_db: bool = False,
-) -> AsyncGenerator[asyncpg.Pool, None]:
-    server_dsn, database = (
-        "postgresql://paradigmx@localhost",
-        "zion",
-    )
-    if create_db:
-        with logfire.span("check and create DB"):
-            conn = await asyncpg.connect(f"{server_dsn}/postgres")
-            try:
-                db_exists = await conn.fetchval(
-                    "SELECT 1 FROM pg_database WHERE datname = $1", database
-                )
-                if not db_exists:
-                    await conn.execute(f"CREATE DATABASE {database}")
-            finally:
-                await conn.close()
-
-    pool = await asyncpg.create_pool(f"{server_dsn}/{database}")
-    try:
-        yield pool
-    finally:
-        await pool.close()
+async def build_search_db():
+    """Build the search database."""
+    sections = await prepare_content()
+    await kb_store.load(sections)
 
 
-DB_SCHEMA = """
-CREATE EXTENSION IF NOT EXISTS vector;
-
-CREATE TABLE IF NOT EXISTS doc_sections (
-    id serial PRIMARY KEY,
-    url text NOT NULL UNIQUE,
-    title text NOT NULL,
-    content text NOT NULL,
-    -- nomic-embed-text returns a vector of 768 floats
-    embedding vector(768) NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_doc_sections_embedding ON doc_sections USING hnsw (embedding vector_l2_ops);
-"""
-
-
-# utility function taken unchanged from
-# https://github.com/Python-Markdown/markdown/blob/3.7/markdown/extensions/toc.py#L38
-def slugify(value: str, separator: str, unicode: bool = False) -> str:
-    """Slugify a string, to make it URL friendly."""
-
-    if not unicode:
-        # replace extended latin characters with ascii, i.e. `žlutý` => `zluty`
-        value = unicodedata.normalize("NFKD", value)
-        value = value.encode("ascii", "ignore").decode("ascii")
-    value = re.sub(r"[^\w\s-]", "", value).strip().lower()
-    return re.sub(rf"[{separator}\s]+", separator, value)
-
+## put all things together
 
 if __name__ == "__main__":
+    import sys
+    
     action = sys.argv[1] if len(sys.argv) > 1 else None
     if action == "build":
         asyncio.run(build_search_db())
@@ -239,7 +107,7 @@ if __name__ == "__main__":
         asyncio.run(run_agent(q))
     else:
         print(
-            "uv run rag.py build|search",
+            "uv run kb_online.py build|search",
             file=sys.stderr,
         )
         sys.exit(1)

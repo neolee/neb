@@ -91,13 +91,13 @@ class PgVectorStore:
                 uri, title, content, embedding_json
             )
 
-    async def retrieve(self, query: str, pool: asyncpg.Pool) -> str:
+    async def retrieve(self, query: str, pool: asyncpg.Pool, limit: int) -> str:
         with logfire.span("create embedding for {query=}", query=query):
             embedding = await self.embedder.create_embedding(query)
             embedding_json = pydantic_core.to_json(embedding).decode()
             rows = await pool.fetch(
-                f"SELECT uri, title, content FROM {self.table} ORDER BY embedding <-> $1 LIMIT 8",
-                embedding_json,
+                f"SELECT uri, title, content FROM {self.table} ORDER BY embedding <-> $1 LIMIT $2",
+                embedding_json, limit
             )
             return "\n\n".join(
                 f"# {row['title']}\nURI:{row['uri']}\n\n{row['content']}\n"
