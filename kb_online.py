@@ -9,8 +9,9 @@ from pydantic import TypeAdapter
 from pydantic_ai import RunContext
 from pydantic_ai.agent import Agent
 
+from rag.store.base import Section, RAGStore
+from rag.store.pgvector import PgVectorStore
 from embedders import nomic
-from rag.store.pgvector import PgVectorStore, Section
 
 kb_store = PgVectorStore(
     embedder=nomic,
@@ -29,7 +30,7 @@ logfire.instrument_openai(nomic.client)
 
 @dataclass
 class Deps:
-    store: PgVectorStore
+    store: RAGStore
 
 import mal.pydantic_ai.model as model
 rag_agent = Agent(model=model.default, deps_type=Deps)

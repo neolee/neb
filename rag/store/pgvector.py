@@ -1,5 +1,4 @@
 from __future__ import annotations as _annotations
-from dataclasses import dataclass
 from contextlib import asynccontextmanager
 from typing_extensions import AsyncGenerator
 
@@ -10,14 +9,7 @@ import logfire
 import asyncpg
 
 from rag.embeddings.embedder import Embedder
-
-
-@dataclass
-class Section:
-    uri: str
-    title: str
-    content: str
-    embedding_content: str
+from rag.store.base import Section, RAGStore
 
 
 DB_SCHEMA = """
@@ -33,9 +25,9 @@ CREATE TABLE IF NOT EXISTS {table} (
 CREATE INDEX IF NOT EXISTS idx_{table}_embeddings ON {table} USING hnsw (embedding vector_l2_ops);
 """
 
-class PgVectorStore:
+class PgVectorStore(RAGStore):
     def __init__(self, embedder: Embedder, dsn: str, db: str, table: str) -> None:
-        self.embedder = embedder
+        super().__init__(embedder)
         self.dsn = dsn
         self.db = db
         self.table = table
@@ -98,12 +90,12 @@ class PgVectorStore:
             embedding = await self.embedder.create_embedding(query)
             embedding_json = pydantic_core.to_json(embedding).decode()
 
-            async with self._connect() as pool:
-                rows = await pool.fetch(
-                    f"SELECT uri, title, content FROM {self.table} ORDER BY embedding <-> $1 LIMIT $2",
-                    embedding_json, limit
-                )
-                return "\n\n".join(
-                    f"# {row['title']}\nURI:{row['uri']}\n\n{row['content']}\n"
-                    for row in rows
-                )
+        async with self._connect() as pool:
+            rows = await pool.fetch(
+                f"SELECT uri, title, content FROM {self.table} ORDER BY embedding <-> $1 LIMIT $2",
+                embedding_json, limit
+            )
+            return "\n\n".join(
+                f"# {row['title']}\nURI:{row['uri']}\n\n{row['content']}\n"
+                for row in rows
+            )

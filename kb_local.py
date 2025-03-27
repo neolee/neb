@@ -9,8 +9,9 @@ from pydantic_ai.agent import Agent
 
 from util.fs import list_files
 from rag.text.pdf_loader import PDFLoader
+from rag.store.base import Section, RAGStore
+from rag.store.pgvector import PgVectorStore
 from embedders import snowflake
-from rag.store.pgvector import PgVectorStore, Section
 
 kb_store = PgVectorStore(
     embedder=snowflake,
@@ -29,7 +30,7 @@ logfire.instrument_openai(snowflake.client)
 
 @dataclass
 class Deps:
-    store: PgVectorStore
+    store: RAGStore
 
 import mal.pydantic_ai.model as model
 rag_agent = Agent(model=model.default, deps_type=Deps)
