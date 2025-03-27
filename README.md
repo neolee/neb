@@ -18,9 +18,9 @@ For more information, please refer to MAL [README](https://github.com/neolee/mal
 
 A general wrapper of embedding models.
 
-> `rag/store/pgvector.py`
+> `rag/store/base.py` `rag/store/pgvector.py` `rag/store/chroma.py`
 
-A general wrapper for vector-based knowledge stores, currently supporting `PostgreSQL` with `pgvector`. Support for Chroma and LanceDB is coming in future updates.
+A general wrapper for vector-based knowledge stores, currently supporting `PostgreSQL` (with `pgvector`) and `Chroma`. Adding support for additional databases is straightforward. 
 
 > `rag/text/pdf_loader.py` `rag/text/chunk.py`
 

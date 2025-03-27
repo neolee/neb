@@ -9,16 +9,25 @@ from pydantic_ai.agent import Agent
 
 from util.fs import list_files
 from rag.text.pdf_loader import PDFLoader
-from rag.store.base import Section, RAGStore
-from rag.store.pgvector import PgVectorStore
 from embedders import snowflake
+from rag.store.base import Section, RAGStore
 
+## easily change vector store backend as below
+# pgvector
+from rag.store.pgvector import PgVectorStore
 kb_store = PgVectorStore(
     embedder=snowflake,
     dsn="postgresql://paradigmx@localhost",
     db="zion",
     table="books"
 )
+# chromedb
+# from rag.store.chroma import ChromaStore
+# kb_store = ChromaStore(
+#     embedder=snowflake,
+#     name="books",
+#     path="./local/chromadb"
+# )
 
 import logfire
 import instrument

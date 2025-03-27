@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "asyncpg>=0.30.0",
+    "chromadb>=0.6.3",
     "devtools>=0.12.2",
     "duckduckgo-search>=7.5.3",
     "fastapi>=0.115.11",

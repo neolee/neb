@@ -9,16 +9,25 @@ from pydantic import TypeAdapter
 from pydantic_ai import RunContext
 from pydantic_ai.agent import Agent
 
-from rag.store.base import Section, RAGStore
-from rag.store.pgvector import PgVectorStore
 from embedders import nomic
+from rag.store.base import Section, RAGStore
 
+## easily change vector store backend as below
+# pgvector
+from rag.store.pgvector import PgVectorStore
 kb_store = PgVectorStore(
     embedder=nomic,
     dsn="postgresql://paradigmx@localhost",
     db="zion",
     table="logfire_docs"
 )
+# chromedb
+# from rag.store.chroma import ChromaStore
+# kb_store = ChromaStore(
+#     embedder=nomic,
+#     name="logfire_docs",
+#     path="./local/chromadb"
+# )
 
 import logfire
 import instrument
