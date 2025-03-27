@@ -4,12 +4,10 @@ from dataclasses import dataclass
 import asyncio
 
 import httpx
-import asyncpg
 
 from pydantic import TypeAdapter
 from pydantic_ai import RunContext
 from pydantic_ai.agent import Agent
-from openai import AsyncOpenAI
 
 from embedders import nomic
 from rag.store.pgvector import PgVectorStore, Section
@@ -31,8 +29,7 @@ logfire.instrument_openai(nomic.client)
 
 @dataclass
 class Deps:
-    client: AsyncOpenAI
-    pool: asyncpg.Pool
+    store: PgVectorStore
 
 import mal.pydantic_ai.model as model
 rag_agent = Agent(model=model.default, deps_type=Deps)
@@ -45,15 +42,14 @@ async def retrieve(context: RunContext[Deps], query: str) -> str:
         context: the call context.
         query: the search query.
     """
-    return await kb_store.retrieve(query, context.deps.pool, 10)
+    return await context.deps.store.retrieve(query, 10)
 
 async def run_agent(question: str):
     """Entry point to run the agent and perform RAG based question answering."""
     logfire.info("Asking '{question}'", question=question)
 
-    async with kb_store.connect() as pool:
-        deps = Deps(client=nomic.client, pool=pool)
-        answer = await rag_agent.run(question, deps=deps)
+    deps = Deps(store=kb_store)
+    answer = await rag_agent.run(question, deps=deps)
     print(answer.data)
 
 

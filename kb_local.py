@@ -4,11 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 import asyncio
 
-import asyncpg
-
 from pydantic_ai import RunContext
 from pydantic_ai.agent import Agent
-from openai import AsyncOpenAI
 
 from util.fs import list_files
 from rag.text.pdf_loader import PDFLoader
@@ -32,8 +29,7 @@ logfire.instrument_openai(snowflake.client)
 
 @dataclass
 class Deps:
-    client: AsyncOpenAI
-    pool: asyncpg.Pool
+    store: PgVectorStore
 
 import mal.pydantic_ai.model as model
 rag_agent = Agent(model=model.default, deps_type=Deps)
@@ -46,15 +42,14 @@ async def retrieve(context: RunContext[Deps], query: str) -> str:
         context: the call context.
         query: the search query.
     """
-    return await kb_store.retrieve(query, context.deps.pool, 10)
+    return await context.deps.store.retrieve(query, 10)
 
 async def run_agent(question: str):
     """Entry point to run the agent and perform RAG based question answering."""
     logfire.info("Asking '{question}'", question=question)
 
-    async with kb_store.connect() as pool:
-        deps = Deps(client=snowflake.client, pool=pool)
-        answer = await rag_agent.run(question, deps=deps)
+    deps = Deps(kb_store)
+    answer = await rag_agent.run(question, deps=deps)
     print(answer.data)
 
 
