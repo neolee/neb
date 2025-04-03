@@ -7,6 +7,9 @@ instrument.init()
 
 import mal.pydantic_ai.model as model
 
+# before running the client code ensure running the server using:
+# deno run -N -R=node_modules -W=node_modules --node-modules-dir=auto jsr:@pydantic/mcp-run-python [sse|stdio|warmup]
+# more info: https://github.com/pydantic/pydantic-ai/blob/main/mcp-run-python/README.md
 
 server_sse = MCPServerHTTP(url='http://localhost:3001/sse')
 agent_sse = Agent(model.default, mcp_servers=[server_sse])

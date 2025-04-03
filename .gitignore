@@ -16,11 +16,9 @@ dist/
 wheels/
 *.egg-info
 
+node_modules
 .venv
-
 .aider*
-.idea
-
 .logfire
 
 local
