@@ -14,7 +14,7 @@ agent = Agent(
 result = agent.run_sync(
     'Can you list the top five highest-grossing animated films of 2025?'
 )
-print(result.data)
+print(result.output)
 
 
 ## tavily tool
@@ -29,4 +29,4 @@ agent = Agent(
 )
 
 result = agent.run_sync('Tell me the top news in the GenAI world, give me links.')
-print(result.data)
+print(result.output)

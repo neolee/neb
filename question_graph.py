@@ -11,13 +11,13 @@ from pydantic_graph import BaseNode, End, Graph, GraphRunContext
 from pydantic_graph.persistence.file import FileStatePersistence
 
 from pydantic_ai import Agent
-from pydantic_ai.format_as_xml import format_as_xml
+from pydantic_ai import format_as_xml
 from pydantic_ai.messages import ModelMessage
 
 import mal.pydantic_ai.model as model
 
 
-ask_agent = Agent(model.default, result_type=str)
+ask_agent = Agent(model.default, output_type=str)
 
 
 @dataclass
@@ -34,8 +34,8 @@ class Ask(BaseNode[QuestionState]):
             message_history=ctx.state.ask_agent_messages,
         )
         ctx.state.ask_agent_messages += result.all_messages()
-        ctx.state.question = result.data
-        return Answer(result.data)
+        ctx.state.question = result.output
+        return Answer(result.output)
 
 @dataclass
 class Answer(BaseNode[QuestionState]):
@@ -54,7 +54,7 @@ class EvaluationResult(BaseModel, use_attribute_docstrings=True):
 
 evaluate_agent = Agent(
     model.default,
-    result_type=EvaluationResult,
+    output_type=EvaluationResult,
     system_prompt='Given a question and answer, evaluate if the answer is correct.',
 )
 
@@ -73,10 +73,10 @@ class Evaluate(BaseNode[QuestionState, None, str]):
             message_history=ctx.state.evaluate_agent_messages,
         )
         ctx.state.evaluate_agent_messages += result.all_messages()
-        if result.data.correct:
-            return End(result.data.comment)
+        if result.output.correct:
+            return End(result.output.comment)
         else:
-            return Reprimand(result.data.comment)
+            return Reprimand(result.output.comment)
 
 @dataclass
 class Reprimand(BaseNode[QuestionState]):

@@ -20,7 +20,7 @@ agent_stdio = Agent(model.default, mcp_servers=[server_stdio])
 async def run(agent):
     async with agent.run_mcp_servers():
         result = await agent.run('How many days between 2000-01-01 and 2025-03-28?')
-    print(result.data)
+    print(result.output)
 
 
 if __name__ == "__main__":

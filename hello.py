@@ -9,4 +9,4 @@ agent = Agent(
 )
 
 result = agent.run_sync('Where does "hello world" come from?')
-print(result.data)
+print(result.output)

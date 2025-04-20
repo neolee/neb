@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypeAlias
 
 from pydantic_ai import Agent, ModelRetry, RunContext
-from pydantic_ai.format_as_xml import format_as_xml
+from pydantic_ai import format_as_xml
 
 import mal.pydantic_ai.model as model
 
@@ -87,7 +87,7 @@ Response: TypeAlias = Union[Success, InvalidRequest]
 sql_gen_agent: Agent[Deps, Response] = Agent(
     model=model.default,
     # type ignore while we wait for PEP-0747, nonetheless unions will work fine everywhere else
-    result_type=Response,  # type: ignore
+    output_type=Response, # type: ignore
     deps_type=Deps
 )
 
@@ -108,7 +108,7 @@ today's date = {date.today()}
 """
 
 
-@sql_gen_agent.result_validator
+@sql_gen_agent.output_validator
 async def validate_result(ctx: RunContext[Deps], result: Response) -> Response:
     if isinstance(result, InvalidRequest):
         return result
@@ -135,7 +135,7 @@ async def main():
     async with database_connect("postgresql://paradigmx@localhost", "zion") as conn:
         deps = Deps(conn)
         result = await sql_gen_agent.run(prompt, deps=deps)
-    debug(result.data)
+    debug(result.output)
 
 
 # pyright: reportUnknownMemberType=false

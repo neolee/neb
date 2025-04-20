@@ -8,7 +8,7 @@ instrument.init()
 roulette_agent = Agent(
     model=model.default,
     deps_type=int,
-    result_type=bool,
+    output_type=bool,
     system_prompt=(
         'Use the `roulette_wheel` function to see if the '
         'customer has won based on the number they provide.'
@@ -27,7 +27,7 @@ import random
 success_number = random.randint(1, 5)
 print("winning number: ", success_number)
 result = roulette_agent.run_sync('Put my money on square two', deps=success_number)
-print(result.data)
+print(result.output)
 
 result = roulette_agent.run_sync('I bet four is the winner', deps=success_number)
-print(result.data)
+print(result.output)

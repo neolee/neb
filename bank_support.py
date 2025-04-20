@@ -25,7 +25,7 @@ class SupportResult(BaseModel):
 support_agent = Agent(
     model.default,
     deps_type=SupportDependencies,
-    result_type=SupportResult,
+    output_type=SupportResult,
     system_prompt=(
         'You are a support agent in our bank, give the '
         'customer support and judge the risk level of their query. '
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     deps = SupportDependencies(account_number="101", db=BankDBConn())
 
     result = support_agent.run_sync('What is my balance?', deps=deps)
-    print(result.data)
+    print(result.output)
 
     result = support_agent.run_sync('I just lost my card!', deps=deps)
-    print(result.data)
+    print(result.output)

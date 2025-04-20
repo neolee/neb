@@ -11,10 +11,10 @@ class MyModel(BaseModel):
     country: str
 
 
-city_agent = Agent(model.default, result_type=MyModel)
+city_agent = Agent(model.default, output_type=MyModel)
 
 if __name__ == '__main__':
     # result = city_agent.run_sync('The windy city in the USA.')
     result = city_agent.run_sync('The capital city of PR of China.')
-    print(result.data)
+    print(result.output)
     print(result.usage())

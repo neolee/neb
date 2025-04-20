@@ -133,7 +133,7 @@ async def main():
         result = await weather_agent.run(
             'What is the weather like in Berlin and in Pudong District of Shanghai?', deps=deps
         )
-        print('Response:', result.data)
+        print('Response:', result.output)
 
 
 if __name__ == '__main__':

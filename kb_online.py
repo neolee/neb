@@ -60,7 +60,7 @@ async def run_agent(question: str):
 
     deps = Deps(store=kb_store)
     answer = await rag_agent.run(question, deps=deps)
-    print(answer.data)
+    print(answer.output)
 
 
 ## biuld the search database (and some utilities)
