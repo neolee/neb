@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS {table} (
 CREATE INDEX IF NOT EXISTS idx_{table}_embeddings ON {table} USING hnsw (embedding vector_l2_ops);
 """
 
+
 class PgVectorStore(RAGStore):
     def __init__(self, embedder: Embedder, dsn: str, db: str, table: str) -> None:
         super().__init__(embedder)

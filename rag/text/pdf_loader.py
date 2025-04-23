@@ -7,10 +7,12 @@ from marker.output import text_from_rendered
 
 from rag.text.chunk import chunk_text
 
+
 default_config = {
     "output_format": "markdown",
     "disable_image_extraction": "true"
 }
+
 
 class PDFLoader:
     def __init__(self, path: str, config: dict=default_config) -> None:
