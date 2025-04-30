@@ -1,12 +1,12 @@
 from mal.providers import provider_by_alias
-from rag.embeddings.embedder import Embedder
+from mal.openai.embedder import Embedder
 
 
-_ollama_provider = provider_by_alias("ollama")
+_local_provider = provider_by_alias("local")
 _qwen_provider = provider_by_alias("qwen")
 
-nomic = Embedder(_ollama_provider, "nomic-embed-text", 768)
-snowflake = Embedder(_ollama_provider, "snowflake-arctic-embed2", 1024)
+nomic = Embedder(_local_provider, "nomic", 768)
+snowflake = Embedder(_local_provider, "snowflake", 1024)
 aliyun = Embedder(_qwen_provider, "text-embedding-v3", 1024)
 
 
