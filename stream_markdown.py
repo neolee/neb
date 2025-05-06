@@ -15,7 +15,7 @@ instrument.init()
 
 coding_agent = Agent()
 
-models = [model.deepseek, model.qwen_coder, model.ollama_coder]
+models = [model.deepseek, model.qwen_coder]
 
 async def main():
     prettier_code_blocks()
@@ -26,7 +26,7 @@ async def main():
         console.rule(f"[bold red]Using model {model.model_name}")
         with Live('', console=console, vertical_overflow='visible') as live:
             async with coding_agent.run_stream(prompt, model=model) as result:
-                async for message in result.stream():
+                async for message in result.stream_text():
                     live.update(Markdown(message))
         console.log(result.usage())
 
