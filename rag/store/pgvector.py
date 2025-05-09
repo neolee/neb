@@ -8,7 +8,7 @@ import pydantic_core
 import logfire
 import asyncpg
 
-from rag.embeddings.embedder import Embedder
+from mal.openai.embedder import Embedder
 from rag.store.base import Section, RAGStore
 
 
