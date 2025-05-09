@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
-from rag.embeddings.embedder import Embedder
+from mal.openai.embedder import Embedder
 
 
 @dataclass
