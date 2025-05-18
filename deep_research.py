@@ -438,4 +438,7 @@ async def workflow(topic: str) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(workflow(default_topic))
+    import sys
+
+    topic = sys.argv[1] if len(sys.argv) > 1 else default_topic
+    asyncio.run(workflow(topic))
