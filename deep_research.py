@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+## deep research workflow based on https://github.com/lars20070/deepresearcher2/
+
 from __future__ import annotations as _annotations
 
 import asyncio
@@ -6,19 +7,29 @@ import os
 import re
 from dataclasses import dataclass
 
-from duckduckgo_search import DDGS
 from pydantic import BaseModel, Field
+
 from pydantic_ai import Agent, format_as_xml
-from pydantic_ai.models.openai import OpenAIModel
-from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_graph import BaseNode, End, Graph, GraphRunContext
 
-# Config parameters
-topic = "petrichor"
-max_research_loops = 2
-max_web_search_results = 3
+from duckduckgo_search import DDGS
 
-# Prompts
+import instrument
+instrument.init()
+
+import mal.pydantic_ai.model as m
+
+
+## config
+
+default_topic = "agentic system"
+max_research_loops = 2
+max_web_search_results = 5
+report_output_path = "local/reports/"
+
+
+## prompts
+
 query_instructions_without_reflection = """
 Please generate a targeted web search query for a specific topic.
 
@@ -209,9 +220,10 @@ The JSON response must be properly formatted with quotes escaped within the summ
 """
 
 
-# Models
+## models
+
 class DeepState(BaseModel):
-    topic: str = Field(default="petrichor", description="main research topic")
+    topic: str = Field(default=default_topic, description="main research topic")
     search_query: WebSearchQuery | None = Field(default=None, description="single search query for the current loop")
     search_results: list[WebSearchResult] | None = Field(default=None, description="list of search results in the current loop")
     search_summaries: list[WebSearchSummary] | None = Field(default=None, description="list of all search summaries of the past loops")
@@ -228,8 +240,8 @@ class WebSearchQuery(BaseModel):
 class WebSearchResult(BaseModel):
     title: str = Field(..., description="short descriptive title of the web search result")
     url: str = Field(..., description="URL of the web search result")
-    summary: str | None = Field(None, description="summary of the web search result")
     content: str | None = Field(None, description="main content of the web search result in Markdown format")
+    summary: str | None = Field(None, description="summary of the web search result")
 
 
 class Reference(BaseModel):
@@ -251,8 +263,10 @@ class FinalSummary(BaseModel):
     summary: str = Field(..., description="summary of the topic for the final report")
 
 
-# Agents
-model = OpenAIModel(model_name="llama3.3", provider=OpenAIProvider(base_url="http://localhost:11434/v1"))
+## agents
+
+model = m.deepseek
+
 query_agent = Agent(model=model, output_type=WebSearchQuery, system_prompt="")
 summary_agent = Agent(model=model, output_type=WebSearchSummary, system_prompt=summary_instructions)
 reflection_agent = Agent(model=model, output_type=Reflection, system_prompt=reflection_instructions)
@@ -260,71 +274,70 @@ final_summary_agent = Agent(model=model, output_type=FinalSummary, system_prompt
 
 
 def duckduckgo_search(query: str) -> list[WebSearchResult]:
-    """
-    Perform a web search using DuckDuckGo and return a list of results.
+    """Perform a web search using DuckDuckGo and return a list of results.
 
     Args:
         query (str): The search query to execute.
-
     Returns:
-        list[WebSearchResult]: list of search results
+        list[WebSearchResult]: list of search results.
     """
-
-    # Run the search
     with DDGS() as ddgs:
         ddgs_results = list(ddgs.text(query, max_results=max_web_search_results))
 
-    # Convert to pydantic objects
+    # convert to pydantic objects
     results = []
     for r in ddgs_results:
-        result = WebSearchResult(title=r.get("title"), url=r.get("href"), content=r.get("body"))
+        result = WebSearchResult(
+            title=r.get("title", ""),
+            url=r.get("href", ""),
+            content=r.get("body", ""),
+            summary=""
+        )
         results.append(result)
 
     return results
 
 
 def export_report(report: str, topic: str = "Report") -> None:
-    """
-    Export the report to markdown.
+    """Export the report to markdown.
 
     Args:
         report (str): The report content in markdown format.
         topic (str): The topic of the report. Defaults to "Report".
     """
     file_name = re.sub(r"[^a-zA-Z0-9]", "_", topic).lower()
-    path_md = os.path.join("reports/", f"{file_name}.md")
+    path_md = os.path.join(report_output_path, f"{file_name}.md")
     with open(path_md, "w", encoding="utf-8") as f:
         f.write(report)
 
 
-# Nodes
+
+## nodes
+# pyright: reportUnusedFunction=false
+
 @dataclass
 class WebSearch(BaseNode[DeepState]):
-    """
-    Web Search node.
-    """
+    """Web Search node."""
 
     async def run(self, ctx: GraphRunContext[DeepState]) -> SummarizeSearchResults:
         topic = ctx.state.topic
 
         @query_agent.system_prompt
         def add_reflection() -> str:
-            """
-            Add reflection from the previous loop to the system prompt.
-            """
+            """Add reflection from the previous loop to the system prompt."""
             if ctx.state.reflection:
                 xml = format_as_xml(ctx.state.reflection, root_tag="reflection")
                 return query_instructions_with_reflection + f"Reflection on existing knowledge:\n{xml}\n" + "Provide your response in JSON format."
             else:
                 return query_instructions_without_reflection
 
-        # Generate the query
+        # generate the query
         async with query_agent.run_mcp_servers():
             prompt = f"Please generate a web search query for the following topic: <TOPIC>{topic}</TOPIC>"
             result = await query_agent.run(prompt)
             ctx.state.search_query = result.output
 
-        # Run the search
+        # run the search
         ctx.state.search_results = duckduckgo_search(ctx.state.search_query.query)
 
         return SummarizeSearchResults()
@@ -332,26 +345,22 @@ class WebSearch(BaseNode[DeepState]):
 
 @dataclass
 class SummarizeSearchResults(BaseNode[DeepState]):
-    """
-    Summarize Search Results node.
-    """
+    """Summarize Search Results node."""
 
     async def run(self, ctx: GraphRunContext[DeepState]) -> ReflectOnSearch:
         @summary_agent.system_prompt
         def add_web_search_results() -> str:
-            """
-            Add web search results to the system prompt.
-            """
+            """Add web search results to the system prompt."""
             xml = format_as_xml(ctx.state.search_results, root_tag="search_results")
             return f"List of web search results:\n{xml}"
 
-        # Generate the summary
+        # generate the summary
         async with summary_agent.run_mcp_servers():
             summary = await summary_agent.run(
                 user_prompt=f"Please summarize the provided web search results for the topic <TOPIC>{ctx.state.topic}</TOPIC>."
             )
 
-            # Append the summary to the list of all search summaries
+            # append the summary to the list of all search summaries
             ctx.state.search_summaries = ctx.state.search_summaries or []
             ctx.state.search_summaries.append(
                 WebSearchSummary(
@@ -365,25 +374,20 @@ class SummarizeSearchResults(BaseNode[DeepState]):
 
 @dataclass
 class ReflectOnSearch(BaseNode[DeepState]):
-    """
-    Reflect on Search node.
-    """
+    """Reflect on Search node."""
 
     async def run(self, ctx: GraphRunContext[DeepState]) -> WebSearch | FinalizeSummary:
-        # Flow control
-        # Should we ponder on the next web search or compile the final report?
+        # flow control: should we ponder on the next web search or compile the final report?
         if ctx.state.count < max_research_loops:
             ctx.state.count += 1
 
             @reflection_agent.system_prompt
             def add_search_summaries() -> str:
-                """
-                Add search summaries to the system prompt.
-                """
+                """Add search summaries to the system prompt."""
                 xml = format_as_xml(ctx.state.search_summaries, root_tag="search_summaries")
                 return f"List of search summaries:\n{xml}"
 
-            # Reflect on the summaries so far
+            # reflect on the summaries so far
             async with reflection_agent.run_mcp_servers():
                 reflection = await reflection_agent.run(
                     user_prompt=f"Please reflect on the provided web search summaries for the topic <TOPIC>{ctx.state.topic}</TOPIC>."
@@ -401,46 +405,37 @@ class ReflectOnSearch(BaseNode[DeepState]):
 
 @dataclass
 class FinalizeSummary(BaseNode[DeepState]):
-    """
-    Finalize Summary node.
-    """
+    """Finalize Summary node."""
 
-    async def run(self, ctx: GraphRunContext[DeepState]) -> End:
+    async def run(self, ctx: GraphRunContext[DeepState]) -> End[str]: # type: ignore
         topic = ctx.state.topic
 
         @final_summary_agent.system_prompt
         def add_search_summaries() -> str:
-            """
-            Add search summaries to the system prompt.
-            """
+            """Add search summaries to the system prompt."""
             xml = format_as_xml(ctx.state.search_summaries, root_tag="search_summaries")
             return f"List of search summaries:\n{xml}"
 
-        # Finalize the summary of the entire report
+        # finalize the summary of the entire report
         async with final_summary_agent.run_mcp_servers():
             final_summary = await final_summary_agent.run(
                 user_prompt=f"Please summarize all web search summaries for the topic <TOPIC>{ctx.state.topic}</TOPIC>."
             )
             report = f"## {topic}\n\n" + final_summary.output.summary
 
-        # Export the report
         export_report(report=report, topic=topic)
 
         return End("End of deep research workflow.\n\n")
 
 
-# Workflow
-async def deepresearch() -> None:
-    # Define the agent graph
-    graph = Graph(nodes=[WebSearch, SummarizeSearchResults, ReflectOnSearch, FinalizeSummary])
+## workflow
 
-    # Run the agent graph
-    await graph.run(WebSearch(), state=DeepState(topic=topic, count=1))
+async def workflow(topic: str) -> None:
+    # define and run the agent graph
+    deep_research = Graph(nodes=[WebSearch, SummarizeSearchResults, ReflectOnSearch, FinalizeSummary])
 
-
-def main() -> None:
-    asyncio.run(deepresearch())
+    await deep_research.run(WebSearch(), state=DeepState(topic=topic, count=1))
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(workflow(default_topic))
