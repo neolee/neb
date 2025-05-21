@@ -199,7 +199,8 @@ You will receive web search summaries in XML with `<WebSearchSummary>` tags cont
 3. Focus on delivering comprehensive information relevant to the implied topic
 4. When search results contain conflicting information, present both perspectives and indicate the discrepancy
 5. Structure your report into 3-5 paragraphs of reasonable length (150-300 words each)
-6. Avoid redundancy while ensuring all important information is included
+6. Use bullet list whenever possible
+7. Avoid redundancy while ensuring all important information is included
 </REQUIREMENTS>
 
 <OUTPUT_FORMAT>
