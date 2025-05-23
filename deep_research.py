@@ -31,193 +31,226 @@ report_output_path = "local/reports/"
 ## prompts
 
 query_instructions_without_reflection = """
-Please generate a targeted web search query for a specific topic.
+You are a research strategist initiating comprehensive topic exploration through targeted web searches.
+
+<OBJECTIVE>
+Generate the first strategic search query that establishes foundational understanding while identifying the most promising research direction.
+</OBJECTIVE>
+
+<RESEARCH_STRATEGY>
+For initial exploration, prioritize:
+1. **Foundational Overview**: Core concepts, definitions, and current state
+2. **Scope Assessment**: Understanding the breadth and key aspects of the topic
+3. **Evidence-Based Focus**: Target sources with concrete information over promotional content
+4. **Academic/Professional Sources**: Prefer scholarly, technical, or industry sources
+5. **Recency Balance**: Consider both established knowledge and recent developments
+</RESEARCH_STRATEGY>
+
+<QUERY_CONSTRUCTION_GUIDELINES>
+1. **Specificity Over Breadth**: Target a specific angle rather than generic overviews
+2. **Keyword Optimization**: Use terminology that will surface quality sources
+3. **Avoid Ambiguity**: Construct queries that minimize irrelevant results
+4. **Professional Context**: Frame queries to find expert-level information
+5. **Actionable Focus**: Target information that provides concrete insights
+</QUERY_CONSTRUCTION_GUIDELINES>
 
 <REQUIREMENTS>
-1. **Specificity:** The query must be specific and focused on a single aspect of the topic.
-2. **Relevance:** Ensure the query directly relates to the core topic.
-3. **Conciseness:** The query string must not exceed 100 characters.
-4. **Aspect Definition:** The 'aspect' value must describe the specific focus of the query, excluding the main topic itself.
-5. **Rationale:** Briefly explain why this query is relevant for researching the topic.
+1. **Query Length**: Maximum 100 characters for search effectiveness
+2. **Aspect Definition**: Identify the specific angle being explored (exclude main topic name)
+3. **Strategic Rationale**: Explain why this initial direction is optimal for comprehensive research
+4. **Quality Focus**: Target queries likely to return substantive, authoritative content
 </REQUIREMENTS>
 
 <OUTPUT_FORMAT>
-Respond with a JSON object containing:
-- "query": The generated search query string.
-- "aspect": The specific aspect targeted by the query.
-- "rationale": A brief justification for the query's relevance.
-</OUTPUT_FORMAT>
-
-<EXAMPLE_OUTPUT>
 ```json
 {
-    "query": "Rosalind Franklin DNA structure contributions",
-    "aspect": "DNA structure contributions",
-    "rationale": "Focuses on her specific scientific contributions rather than general biography, addressing a key area of her work."
+    "query": "specific targeted search string focusing on key aspect",
+    "aspect": "precise research angle being explored",
+    "rationale": "why this initial direction provides optimal foundation for comprehensive research"
 }
 ```
-</EXAMPLE_OUTPUT>
+</OUTPUT_FORMAT>
+
+<EXAMPLE_SCENARIOS>
+For "machine learning":
+- Good: "machine learning model training best practices 2024"
+- Avoid: "what is machine learning" (too basic)
+- Avoid: "machine learning everything" (too broad)
+
+For "climate change":
+- Good: "climate change mitigation technologies effectiveness data"
+- Avoid: "climate change overview" (too general)
+- Avoid: "climate change debate" (too contentious/less factual)
+</EXAMPLE_SCENARIOS>
 
 Provide your response in JSON format."""
 
 query_instructions_with_reflection = """
-Please generate a targeted web search query for a specific topic. The query will gather information related to a specific topic
-based on specific knowledge gaps.
+Please generate a targeted web search query for a specific topic based on knowledge gaps.
+
+<CONTEXT>
+You are part of an iterative research process. Previous searches have covered certain aspects, 
+and you must now focus on unexplored areas to build comprehensive understanding.
+</CONTEXT>
 
 <INPUT_FORMAT>
 You will receive reflections in XML with `<reflections>` tags containing:
-- `<knowledge_gaps>`: information that has not been covered in the previous search results
-- `<covered_topics>`: information that has been covered and should not be repeated
+- `<knowledge_gaps>`: Specific unexplored aspects requiring investigation
+- `<covered_topics>`: Well-researched areas to avoid duplication
 </INPUT_FORMAT>
 
+<STRATEGY>
+1. **Gap Prioritization**: Select the most critical knowledge gap that would significantly enhance understanding
+2. **Specificity Focus**: Create queries targeting specific subtopics, not broad overviews
+3. **Evidence-Based**: Prioritize gaps that would provide concrete evidence, data, or examples
+4. **Complementary Research**: Choose gaps that complement existing coverage without overlap
+</STRATEGY>
+
 <REQUIREMENTS>
-1. The knowledge gaps form the basis of the search query.
-2. Identify the most relevant point in the knowledge gaps and use it to create a focused search query.
-3. Pick only one item from the list of knowledge gaps. Do not include all knowledge gaps in the construction of the query.
-4. Check that the query is not covering any aspects listed in the list of covered topics.
-5. Check that the query is at least vaguely related to the topic.
-6. Do not include the topic in the aspect of the query, since this is too broad.
+1. Select ONE high-priority knowledge gap from the list
+2. Construct a specific, actionable search query (max 100 characters)
+3. Ensure zero overlap with covered topics
+4. Target factual, evidence-based information
+5. Avoid generic or biographical queries unless specifically needed
 </REQUIREMENTS>
 
 <OUTPUT_FORMAT>
-Respond with a JSON object containing:
-- "query": The generated search query string.
-- "aspect": The specific aspect targeted by the query.
-- "rationale": A brief justification for the query's relevance.
-</OUTPUT_FORMAT>
-
-<EXAMPLE_OUTPUT>
 ```json
 {
-    "query": "Rosalind Franklin DNA structure contributions",
-    "aspect": "DNA structure contributions",
-    "rationale": "Focuses on her specific scientific contributions rather than general biography, addressing a key area of her work."
+    "query": "specific actionable search string",
+    "aspect": "precise aspect being investigated (exclude main topic)",
+    "rationale": "why this gap is priority and how it enhances overall understanding"
 }
 ```
-</EXAMPLE_OUTPUT>
+</OUTPUT_FORMAT>
 
 Provide your response in JSON format."""
 
 summary_instructions = """
-You are a search results summarizer. Your task is to generate a comprehensive summary from web search results that is relevant to the user's topic.
+You are an expert information synthesizer creating comprehensive topic summaries from web search results.
+
+<OBJECTIVE>
+Transform raw search results into coherent, substantive analysis that builds comprehensive understanding.
+</OBJECTIVE>
 
 <INPUT_FORMAT>
-You will receive web search results in XML with `<WebSearchResult>` tags containing:
-- `<title>`: Descriptive title
-- `<url>`: Source URL
-- `<summary>`: Brief summary 
-- `<content>`: Raw content
+Web search results in XML with `<WebSearchResult>` tags containing:
+- `<title>`: Source title
+- `<url>`: Source URL  
+- `<summary>`: Brief description
+- `<content>`: Full content
 </INPUT_FORMAT>
 
-<REQUIREMENTS>
-1. Compile all topic-relevant information from search results
-2. Create a summary at least 1000 words long
-3. Ensure coherent information flow
-4. Keep content relevant to the user topic
-5. The "aspect" value must be specific to the information and must NOT include the topic itself
-</REQUIREMENTS>
+<SYNTHESIS_APPROACH>
+1. **Information Mining**: Extract all relevant facts, data, examples, and insights
+2. **Pattern Recognition**: Identify themes, trends, and relationships across sources
+3. **Evidence Integration**: Combine complementary information from multiple sources
+4. **Gap Identification**: Note areas where information is limited or contradictory
+5. **Context Building**: Establish how this aspect connects to the broader topic
+</SYNTHESIS_APPROACH>
+
+<QUALITY_STANDARDS>
+- Minimum 1000 words of substantive content
+- Include specific data, examples, and evidence when available
+- Maintain logical flow and coherent structure
+- Preserve nuance and acknowledge uncertainties
+- Focus on actionable insights and concrete information
+</QUALITY_STANDARDS>
 
 <OUTPUT_FORMAT>
-Respond with a JSON object containing:
-- "summary": Direct compilation of ALL information (minimum 1000 words) without preamble, XML tags, or Markdown
-- "aspect": The specific aspect of the topic being researched (excluding the topic itself)
-</OUTPUT_FORMAT>
-
-<EXAMPLE_OUTPUT>
 ```json
 {
-    "summary": "Petrichor refers to the earthy scent produced when rain falls on dry soil or ground, often experienced as a pleasant smell.
-    It is characterized by its distinct aroma, which is typically associated with the smell of rain on dry earth.",
-    "aspect": "definition and meaning",
+    "summary": "Comprehensive synthesis starting directly with information. Include specific facts, data points, examples, and evidence. Structure into coherent paragraphs with logical progression. Acknowledge conflicting information where present.",
+    "aspect": "specific aspect focus (exclude main topic name)"
 }
 ```
-</EXAMPLE_OUTPUT>
-
-Provide your response in JSON format."""
+</OUTPUT_FORMAT>
+"""
 
 reflection_instructions = """
-You analyze web search summaries to identify knowledge gaps and coverage areas.
+You are a research strategist analyzing coverage completeness and identifying critical knowledge gaps.
 
-<INPUT_FORMAT>
-You will receive web search summaries in XML with `<WebSearchSummary>` tags containing:
-- `<summary>`: Summary of the search result as text
-- `<aspect>`: Specific aspect discussed in the summary
-</INPUT_FORMAT>
+<ANALYSIS_FRAMEWORK>
+Evaluate research comprehensiveness across multiple dimensions:
+- **Foundational Knowledge**: Core concepts, definitions, principles
+- **Practical Applications**: Real-world uses, implementations, case studies
+- **Technical Details**: Mechanisms, processes, methodologies
+- **Contextual Factors**: Historical development, current trends, future directions
+- **Stakeholder Perspectives**: Different viewpoints, user experiences, expert opinions
+- **Quantitative Evidence**: Data, statistics, measurements, benchmarks
+- **Challenges & Limitations**: Problems, constraints, failure modes
+</ANALYSIS_FRAMEWORK>
+
+<GAP_IDENTIFICATION_STRATEGY>
+Look for missing elements that would significantly enhance understanding:
+1. **Evidence Gaps**: Areas lacking concrete data or examples
+2. **Perspective Gaps**: Missing stakeholder viewpoints or use cases
+3. **Technical Gaps**: Unclear mechanisms or implementation details
+4. **Contextual Gaps**: Missing historical context or current developments
+5. **Practical Gaps**: Insufficient real-world applications or case studies
+</GAP_IDENTIFICATION_STRATEGY>
 
 <REQUIREMENTS>
-1. Analyze all summaries thoroughly
-2. Identify knowledge gaps needing deeper exploration
-3. Identify well-covered topics to avoid repetition in future searches
-4. Be curious and creative with knowledge gaps! Never return "None" or "Nothing".
-5. Use keywords and phrases only, not sentences
-6. Return only the JSON object - no explanations or formatting
-7. Consider technical details, implementation specifics, and emerging trends
-8. Consider second and third-order effects or implications of the topic when exploring knowledge gaps
-9. Be thorough yet concise
-10. Ensure that the list of knowledgae gaps and the list of covered topics are distinct and do not overlap.
+1. Analyze ALL provided summaries thoroughly
+2. Identify 5-8 specific, actionable knowledge gaps
+3. List 3-5 well-covered topics to avoid repetition
+4. Use precise keywords/phrases, not full sentences
+5. Ensure complete separation between gaps and covered topics
+6. Prioritize gaps that would add substantial value
 </REQUIREMENTS>
 
 <OUTPUT_FORMAT>
-Respond with a JSON object containing:
-- "knowledge_gaps": List of specific aspects requiring further research
-- "covered_topics": List of aspects already thoroughly covered
-</OUTPUT_FORMAT>
-
-<EXAMPLE_OUTPUT>
 ```json
 {
     "knowledge_gaps": [
-        "scientific mechanisms",
-        "psychological effects",
-        "regional variations",
-        "commercial applications",
-        "cultural significance"
+        "specific technical mechanisms",
+        "real-world implementation challenges", 
+        "quantitative performance data",
+        "user experience perspectives",
+        "comparative analysis with alternatives"
     ],
     "covered_topics": [
-        "basic definition",
-        "etymology",
-        "general description"
+        "basic definitions",
+        "general overview", 
+        "historical background"
     ]
 }
 ```
-</EXAMPLE_OUTPUT>
+</OUTPUT_FORMAT>
 
 Provide your response in JSON format."""
 
 final_summary_instructions = """
-You are a precise information compiler that transforms web search summaries into comprehensive reports. Follow these instructions carefully.
+You are a master research compiler creating definitive topic reports from comprehensive research summaries.
 
-<INPUT_FORMAT>
-You will receive web search summaries in XML with `<WebSearchSummary>` tags containing:
-- `<summary>`: Summary of the search result as text
-- `<aspect>`: Specific aspect discussed in the summary
-</INPUT_FORMAT>
+<COMPILATION_OBJECTIVE>
+Transform multiple research summaries into a cohesive, authoritative report that serves as a comprehensive reference.
+</COMPILATION_OBJECTIVE>
 
-<REQUIREMENTS>
-1. Extract and consolidate all relevant information from the provided summaries
-2. Create a coherent, well-structured report that flows logically
-3. Focus on delivering comprehensive information relevant to the implied topic
-4. When search results contain conflicting information, present both perspectives and indicate the discrepancy
-5. Structure your report into 3-5 paragraphs of reasonable length (150-300 words each)
-6. Use bullet list whenever possible
-7. Avoid redundancy while ensuring all important information is included
-</REQUIREMENTS>
+<STRUCTURAL_APPROACH>
+1. **Opening Context**: Establish topic significance and scope
+2. **Core Analysis**: Present main findings organized by logical themes
+3. **Supporting Evidence**: Include specific data, examples, and case studies
+4. **Synthesis**: Connect different aspects and identify relationships
+5. **Implications**: Highlight practical applications and future considerations
+</STRUCTURAL_APPROACH>
+
+<INTEGRATION_STANDARDS>
+- Synthesize information across all summaries without redundancy
+- Resolve conflicting information by presenting multiple perspectives
+- Maintain consistent depth across different aspects
+- Include specific examples, data points, and evidence
+- Structure into 4-6 substantial paragraphs (200-400 words each)
+- Use bullet points for complex lists or multiple examples
+</INTEGRATION_STANDARDS>
 
 <OUTPUT_FORMAT>
-Respond with a JSON object containing:
-- "summary": The comprehensive report, starting directly with the information without preamble.
-</OUTPUT_FORMAT>
-
-<EXAMPLE_OUTPUT>
 ```json
 {
-    "summary": "Your comprehensive report here. Start directly with the information without preamble.
-    Write multiple cohesive paragraphs with logical flow."
+    "summary": "Begin directly with substantive content. Create a comprehensive report that flows logically from foundational concepts through practical applications. Include specific evidence, examples, and data. Use paragraph structure with occasional bullet points for clarity. Acknowledge different perspectives where relevant."
 }
 ```
-</EXAMPLE_OUTPUT>
-
-The JSON response must be properly formatted with quotes escaped within the summary value. Do not include any text outside the JSON object.
+</OUTPUT_FORMAT>
 """
 
 
@@ -266,7 +299,7 @@ class FinalSummary(BaseModel):
 
 ## agents
 
-model = m.deepseek
+model = m.openrouter_gemini_flash
 
 query_agent = Agent(model=model, output_type=WebSearchQuery, system_prompt="")
 summary_agent = Agent(model=model, output_type=WebSearchSummary, system_prompt=summary_instructions)
