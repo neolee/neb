@@ -12,12 +12,12 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, format_as_xml
 from pydantic_graph import BaseNode, End, Graph, GraphRunContext
 
-from duckduckgo_search import DDGS
-
 import instrument
 instrument.init()
 
 import mal.pydantic_ai.model as m
+
+from util.search import WebSearchResult, tavily_search
 
 
 ## config
@@ -271,13 +271,6 @@ class WebSearchQuery(BaseModel):
     rationale: str = Field(..., description="rationale for the search query")
 
 
-class WebSearchResult(BaseModel):
-    title: str = Field(..., description="short descriptive title of the web search result")
-    url: str = Field(..., description="URL of the web search result")
-    content: str | None = Field(None, description="main content of the web search result in Markdown format")
-    summary: str | None = Field(None, description="summary of the web search result")
-
-
 class Reference(BaseModel):
     title: str = Field(..., description="title of the reference")
     url: str = Field(..., description="URL of the reference")
@@ -305,31 +298,6 @@ query_agent = Agent(model=model, output_type=WebSearchQuery, system_prompt="")
 summary_agent = Agent(model=model, output_type=WebSearchSummary, system_prompt=summary_instructions)
 reflection_agent = Agent(model=model, output_type=Reflection, system_prompt=reflection_instructions)
 final_summary_agent = Agent(model=model, output_type=FinalSummary, system_prompt=final_summary_instructions)
-
-
-def duckduckgo_search(query: str) -> list[WebSearchResult]:
-    """Perform a web search using DuckDuckGo and return a list of results.
-
-    Args:
-        query (str): The search query to execute.
-    Returns:
-        list[WebSearchResult]: list of search results.
-    """
-    with DDGS() as ddgs:
-        ddgs_results = list(ddgs.text(query, max_results=max_web_search_results))
-
-    # convert to pydantic objects
-    results = []
-    for r in ddgs_results:
-        result = WebSearchResult(
-            title=r.get("title", ""),
-            url=r.get("href", ""),
-            content=r.get("body", ""),
-            summary=""
-        )
-        results.append(result)
-
-    return results
 
 
 def export_report(report: str, topic: str = "Report") -> None:
@@ -372,7 +340,7 @@ class WebSearch(BaseNode[DeepState]):
             ctx.state.search_query = result.output
 
         # run the search
-        ctx.state.search_results = duckduckgo_search(ctx.state.search_query.query)
+        ctx.state.search_results = tavily_search(ctx.state.search_query.query, max_web_search_results)
 
         return SummarizeSearchResults()
 
