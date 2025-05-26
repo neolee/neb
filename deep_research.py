@@ -292,7 +292,7 @@ class FinalSummary(BaseModel):
 
 ## agents
 
-model = m.openrouter_gemini_flash
+model = m.deepseek
 
 query_agent = Agent(model=model, output_type=WebSearchQuery, system_prompt="")
 summary_agent = Agent(model=model, output_type=WebSearchSummary, system_prompt=summary_instructions)
