@@ -240,8 +240,7 @@ Transform multiple research summaries into a cohesive, authoritative report that
 - Resolve conflicting information by presenting multiple perspectives
 - Maintain consistent depth across different aspects
 - Include specific examples, data points, and evidence
-- Structure into 4-6 substantial paragraphs (200-400 words each)
-- Use bullet points for complex lists or multiple examples
+- Structure into several substantial paragraphs (100-300 words each) or bullet lists
 </INTEGRATION_STANDARDS>
 
 <OUTPUT_FORMAT>
