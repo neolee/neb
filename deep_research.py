@@ -168,57 +168,34 @@ Web search results in XML with `<WebSearchResult>` tags containing:
 """
 
 reflection_instructions = """
-You are a research strategist analyzing coverage completeness and identifying critical knowledge gaps.
+You are a research strategist analyzing coverage completeness.
 
-<ANALYSIS_FRAMEWORK>
-Evaluate research comprehensiveness across multiple dimensions:
-- **Foundational Knowledge**: Core concepts, definitions, principles
-- **Practical Applications**: Real-world uses, implementations, case studies
-- **Technical Details**: Mechanisms, processes, methodologies
-- **Contextual Factors**: Historical development, current trends, future directions
-- **Stakeholder Perspectives**: Different viewpoints, user experiences, expert opinions
-- **Quantitative Evidence**: Data, statistics, measurements, benchmarks
-- **Challenges & Limitations**: Problems, constraints, failure modes
-</ANALYSIS_FRAMEWORK>
+<CURRENT CONTEXT>
+{context}
+</CURRENT CONTEXT>
 
-<GAP_IDENTIFICATION_STRATEGY>
-Look for missing elements that would significantly enhance understanding:
-1. **Evidence Gaps**: Areas lacking concrete data or examples
-2. **Perspective Gaps**: Missing stakeholder viewpoints or use cases
-3. **Technical Gaps**: Unclear mechanisms or implementation details
-4. **Contextual Gaps**: Missing historical context or current developments
-5. **Practical Gaps**: Insufficient real-world applications or case studies
-</GAP_IDENTIFICATION_STRATEGY>
+<GAP IDENTIFICATION STRATEGY>
+Focus on missing:
+1. Technical mechanisms
+2. Quantitative evidence
+3. Case studies
+</GAP IDENTIFICATION STRATEGY>
 
 <REQUIREMENTS>
-1. Analyze ALL provided summaries thoroughly
-2. Identify 5-8 specific, actionable knowledge gaps
-3. List 3-5 well-covered topics to avoid repetition
-4. Use precise keywords/phrases, not full sentences
-5. Ensure complete separation between gaps and covered topics
-6. Prioritize gaps that would add substantial value
+1. Identify 3-5 specific, searchable knowledge gaps
+2. Prioritize evidence-based gaps
+3. Use comma-separated keywords
 </REQUIREMENTS>
 
-<OUTPUT_FORMAT>
+<OUTPUT FORMAT>
 ```json
 {
-    "knowledge_gaps": [
-        "specific technical mechanisms",
-        "real-world implementation challenges", 
-        "quantitative performance data",
-        "user experience perspectives",
-        "comparative analysis with alternatives"
-    ],
-    "covered_topics": [
-        "basic definitions",
-        "general overview", 
-        "historical background"
-    ]
+    "knowledge_gaps": ["keyword1", "keyword2"],
+    "covered_topics": ["aspect1", "aspect2"]
 }
 ```
 </OUTPUT_FORMAT>
-
-Provide your response in JSON format."""
+"""
 
 final_summary_instructions = """
 You are a master research compiler creating definitive topic reports from comprehensive research summaries.
@@ -262,6 +239,10 @@ class DeepState(BaseModel):
     search_summaries: list[WebSearchSummary] | None = Field(default=None, description="list of all search summaries of the past loops")
     reflection: Reflection | None = Field(default=None, description="reflection on the search results of the previous current loop")
     count: int = Field(default=0, description="counter for tracking iteration count")
+    aspect_registry: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="track covered aspects and key terms: {aspect: [keywords]}"
+    )
 
 
 class WebSearchQuery(BaseModel):
@@ -336,6 +317,13 @@ class WebSearch(BaseNode[DeepState]):
         async with query_agent.run_mcp_servers():
             prompt = f"Please generate a web search query for the following topic: <TOPIC>{topic}</TOPIC>"
             result = await query_agent.run(prompt)
+
+            # validate new aspect doesn't duplicate coverage
+            new_aspect = result.output.aspect
+            if new_aspect in ctx.state.aspect_registry:
+                result = await query_agent.run(
+                    prompt + "\nAvoid duplicating: " + ", ".join(ctx.state.aspect_registry.keys())
+                )
             ctx.state.search_query = result.output
 
         # run the search
@@ -369,6 +357,10 @@ class SummarizeSearchResults(BaseNode[DeepState]):
                     aspect=summary.output.aspect,
                 )
             )
+            
+            # compress and register key terms
+            key_terms = compress_summary(summary.output.summary)
+            ctx.state.aspect_registry[summary.output.aspect] = key_terms
 
         return ReflectOnSearch()
 
@@ -383,10 +375,10 @@ class ReflectOnSearch(BaseNode[DeepState]):
             ctx.state.count += 1
 
             @reflection_agent.system_prompt
-            def add_search_summaries() -> str:
-                """Add search summaries to the system prompt."""
-                xml = format_as_xml(ctx.state.search_summaries, root_tag="search_summaries")
-                return f"List of search summaries:\n{xml}"
+            def add_research_context() -> str:
+                """Add compressed context to reflection prompt"""
+                context = get_research_context(ctx.state)
+                return reflection_instructions.replace("{context}", context)
 
             # reflect on the summaries so far
             async with reflection_agent.run_mcp_servers():
@@ -412,10 +404,10 @@ class FinalizeSummary(BaseNode[DeepState]):
         topic = ctx.state.topic
 
         @final_summary_agent.system_prompt
-        def add_search_summaries() -> str:
-            """Add search summaries to the system prompt."""
-            xml = format_as_xml(ctx.state.search_summaries, root_tag="search_summaries")
-            return f"List of search summaries:\n{xml}"
+        def add_compressed_history() -> str:
+            """Add compressed context to final prompt"""
+            context = get_research_context(ctx.state)
+            return f"{final_summary_instructions}\n\n{context}"
 
         # finalize the summary of the entire report
         async with final_summary_agent.run_mcp_servers():
@@ -427,6 +419,30 @@ class FinalizeSummary(BaseNode[DeepState]):
         export_report(report=report, topic=topic)
 
         return End("End of deep research workflow.\n\n")
+
+
+# context compression helpers used in summary and reflection
+
+def compress_summary(summary: str) -> list[str]:
+    """Extract key terms from summary using simple NLP heuristics"""
+    # implementation notes:
+    # 1. remove stopwords
+    # 2. extract nouns/proper nouns
+    # 3. return top 5 unique terms
+    words = re.findall(r'\b[A-Za-z]{3,}\b', summary.lower())
+    stopwords = set(['the', 'and', 'that', 'this', 'with', 'for', 'are', 'from'])
+    content_words = [w for w in words if w not in stopwords]
+    return list(set(content_words))[:5]  # return top 5 unique terms
+
+
+def get_research_context(state: DeepState) -> str:
+    """Generate compressed context string from registry"""
+    if not state.aspect_registry:
+        return "No research context available yet."
+    context_lines = ["Research Context:"]
+    for aspect, terms in state.aspect_registry.items():
+        context_lines.append(f"- {aspect}: {', '.join(terms[:3])}")
+    return "\n".join(context_lines)
 
 
 ## workflow
