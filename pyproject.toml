@@ -12,7 +12,7 @@ dependencies = [
     "fastapi",
     "httpx[socks]",
     "langdetect",
-    "logfire[asyncpg,fastapi,sqlite3]",
+    "logfire[system-metrics]",
     "marker-pdf",
     "pydantic-ai-slim[logfire,openai,mcp]",
     "pydantic-graph",
