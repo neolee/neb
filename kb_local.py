@@ -41,8 +41,8 @@ logfire.instrument_openai(snowflake.client)
 class Deps:
     store: RAGStore
 
-import mal.pydantic_ai.model as model
-rag_agent = Agent(model=model.default, deps_type=Deps)
+import models as m
+rag_agent = Agent(model=m.default, deps_type=Deps)
 
 @rag_agent.tool
 async def retrieve(context: RunContext[Deps], query: str) -> str:
@@ -58,12 +58,12 @@ async def run_agent(question: str):
     """Entry point to run the agent and perform RAG based question answering."""
     logfire.info("Asking '{question}'", question=question)
 
-    deps = Deps(kb_store)
+    deps = Deps(store=kb_store)
     answer = await rag_agent.run(question, deps=deps)
     print(answer.output)
 
 
-## biuld the search database
+## build the search database
 
 async def prepare_book_content(path: Path) -> list[Section]:
     file_path = str(path)
@@ -88,7 +88,7 @@ async def build_search_db():
         sections = await prepare_book_content(path)
         await kb_store.load(sections)
 
-    
+
 if __name__ == "__main__":
     import sys
 

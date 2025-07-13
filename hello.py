@@ -1,10 +1,10 @@
 from pydantic_ai import Agent
 
-import mal.pydantic_ai.model as model
+import models as m
 
 
 agent = Agent(
-    model=model.default,
+    model=m.default,
     system_prompt='Be concise, reply with one sentence.',
 )
 

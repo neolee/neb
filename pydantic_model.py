@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from pydantic_ai import Agent
-import mal.pydantic_ai.model as model
+import models as m
 
 import instrument
 instrument.init()
@@ -11,7 +11,7 @@ class MyModel(BaseModel):
     country: str
 
 
-city_agent = Agent(model.default, output_type=MyModel)
+city_agent = Agent(m.default, output_type=MyModel)
 
 if __name__ == '__main__':
     # result = city_agent.run_sync('The windy city in the USA.')

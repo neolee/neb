@@ -20,7 +20,7 @@ from typing_extensions import TypeAlias
 from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai import format_as_xml
 
-import mal.pydantic_ai.model as model
+import models as m
 
 
 DB_SCHEMA = """
@@ -85,7 +85,7 @@ class InvalidRequest(BaseModel):
 
 Response: TypeAlias = Union[Success, InvalidRequest]
 sql_gen_agent: Agent[Deps, Response] = Agent(
-    model=model.default,
+    model=m.default,
     # type ignore while we wait for PEP-0747, nonetheless unions will work fine everywhere else
     output_type=Response, # type: ignore
     deps_type=Deps

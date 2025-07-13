@@ -8,7 +8,7 @@ from typing import Any
 from httpx import AsyncClient
 
 from pydantic_ai import Agent, ModelRetry, RunContext
-import mal.pydantic_ai.model as model
+import models as m
 
 import logfire
 import instrument
@@ -23,7 +23,7 @@ class Deps:
 
 
 weather_agent = Agent(
-    model=model.default,
+    model=m.default,
     # 'Be concise, reply with one sentence.' is enough for some models (like openai) to use
     # the below tools appropriately, but others like anthropic and gemini require a bit more direction.
     system_prompt=(

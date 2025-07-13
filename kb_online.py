@@ -41,8 +41,8 @@ logfire.instrument_openai(nomic.client)
 class Deps:
     store: RAGStore
 
-import mal.pydantic_ai.model as model
-rag_agent = Agent(model=model.default, deps_type=Deps)
+import models as m
+rag_agent = Agent(model=m.default, deps_type=Deps)
 
 @rag_agent.tool
 async def retrieve(context: RunContext[Deps], query: str) -> str:
@@ -63,7 +63,7 @@ async def run_agent(question: str):
     print(answer.output)
 
 
-## biuld the search database (and some utilities)
+## build the search database (and some utilities)
 from util.logfire_docs import doc_json_url, make_doc_uri
 
 # data class for doc json parsing
@@ -101,7 +101,7 @@ async def build_search_db():
 
 if __name__ == "__main__":
     import sys
-    
+
     action = sys.argv[1] if len(sys.argv) > 1 else None
     if action == "build":
         asyncio.run(build_search_db())

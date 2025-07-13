@@ -15,7 +15,7 @@ from pydantic_graph import BaseNode, End, Graph, GraphRunContext
 import instrument
 instrument.init()
 
-import mal.pydantic_ai.model as m
+import models as m
 
 from util.search import WebSearchResult, tavily_search
 

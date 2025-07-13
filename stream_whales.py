@@ -7,7 +7,7 @@ from rich.table import Table
 from typing_extensions import NotRequired, TypedDict
 
 from pydantic_ai import Agent
-import mal.pydantic_ai.model as model
+import models as m
 
 import instrument
 instrument.init()
@@ -28,7 +28,7 @@ class Whale(TypedDict):
     description: NotRequired[Annotated[str, Field(description="Short Description")]]
 
 
-agent = Agent(model=model.default, output_type=list[Whale], instrument=True)
+agent = Agent(model=m.default, output_type=list[Whale], instrument=True)
 
 
 async def main():
@@ -56,7 +56,7 @@ async def main():
 
                 table = Table(
                     title="Species of Whale",
-                    caption=f"Streaming Structured responses from {model.default.model_name}",
+                    caption=f"Streaming Structured responses from {m.default.model_name}",
                     # width=120,
                 )
                 table.add_column("ID", justify="right")

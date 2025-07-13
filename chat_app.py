@@ -32,9 +32,9 @@ from pydantic_ai.messages import (
     UserPromptPart,
 )
 
-import mal.pydantic_ai.model as model
+import models as m
 
-agent = Agent(model=model.default)
+agent = Agent(model=m.default)
 THIS_DIR = Path(__file__).parent
 
 

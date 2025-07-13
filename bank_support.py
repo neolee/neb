@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext
-import mal.pydantic_ai.model as model
+import models as m
 
 import instrument
 instrument.init()
@@ -23,7 +23,7 @@ class SupportResult(BaseModel):
 
 
 support_agent = Agent(
-    model.default,
+    m.default,
     deps_type=SupportDependencies,
     output_type=SupportResult,
     system_prompt=(

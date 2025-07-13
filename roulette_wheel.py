@@ -1,12 +1,12 @@
 from pydantic_ai import Agent, RunContext
-import mal.pydantic_ai.model as model
+import models as m
 
 import instrument
 instrument.init()
 
 
 roulette_agent = Agent(
-    model=model.default,
+    model=m.default,
     deps_type=int,
     output_type=bool,
     system_prompt=(

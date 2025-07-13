@@ -14,10 +14,10 @@ from pydantic_ai import Agent
 from pydantic_ai import format_as_xml
 from pydantic_ai.messages import ModelMessage
 
-import mal.pydantic_ai.model as model
+import models as m
 
 
-ask_agent = Agent(model.default, output_type=str)
+ask_agent = Agent(m.default, output_type=str)
 
 
 @dataclass
@@ -53,7 +53,7 @@ class EvaluationResult(BaseModel, use_attribute_docstrings=True):
     """Comment on the answer, reprimand the user if the answer is wrong."""
 
 evaluate_agent = Agent(
-    model.default,
+    m.default,
     output_type=EvaluationResult,
     system_prompt='Given a question and answer, evaluate if the answer is correct.',
 )

@@ -1,9 +1,9 @@
 import asyncio
 from pydantic_ai import Agent
-import mal.pydantic_ai.model as model
+import models as m
 
 
-agent = Agent(model=model.default)
+agent = Agent(model=m.default)
 
 async def main():
     async with agent.run_stream('Where does "hello world" come from?') as result:

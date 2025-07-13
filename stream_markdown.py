@@ -7,7 +7,7 @@ from rich.syntax import Syntax
 from rich.text import Text
 
 from pydantic_ai import Agent
-import mal.pydantic_ai.model as model
+import models as m
 
 import instrument
 instrument.init()
@@ -15,7 +15,7 @@ instrument.init()
 
 coding_agent = Agent()
 
-models = [model.deepseek, model.qwen_coder]
+models = [m.deepseek, m.qwen_coder]
 
 async def main():
     prettier_code_blocks()

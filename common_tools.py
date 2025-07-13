@@ -5,12 +5,12 @@ from pydantic_ai.common_tools.tavily import tavily_search_tool
 import instrument
 instrument.init()
 
-import mal.pydantic_ai.model as model
+import models as m
 from util.pydantic_ai import stream_markdown
 
 
 duckduckgo_agent = Agent(
-    model=model.default,
+    model=m.default,
     tools=[duckduckgo_search_tool()],
     system_prompt="Search DuckDuckGo for the given query and return the results.",
 )
@@ -20,7 +20,7 @@ api_key = os.getenv("TAVILY_API_KEY")
 assert api_key is not None
 
 tavily_agent = Agent(
-    model=model.default,
+    model=m.default,
     tools=[tavily_search_tool(api_key)],
     system_prompt="Search Tavily for the given query and return the results.",
 )
