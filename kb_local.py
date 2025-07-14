@@ -89,6 +89,8 @@ async def build_search_db():
         await kb_store.load(sections)
 
 
+## put all things together
+
 if __name__ == "__main__":
     import sys
 
