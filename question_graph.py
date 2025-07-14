@@ -5,7 +5,7 @@ from pathlib import Path
 import instrument
 instrument.init()
 
-from groq import BaseModel
+from pydantic import BaseModel
 
 from pydantic_graph import BaseNode, End, Graph, GraphRunContext
 from pydantic_graph.persistence.file import FileStatePersistence
