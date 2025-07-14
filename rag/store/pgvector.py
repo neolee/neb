@@ -63,11 +63,12 @@ class PgVectorStore(RAGStore):
 
             sem = Semaphore(10)
             async with TaskGroup() as tg:
-                for section in sections:
-                    tg.create_task(self._insert(
-                        sem, pool, section.uri, section.title, section.content,
-                        section.embedding_content
-                    ))
+                with logfire.span("insert sections"):
+                    for section in sections:
+                        tg.create_task(self._insert(
+                            sem, pool, section.uri, section.title, section.content,
+                            section.embedding_content
+                        ))
 
     async def _insert(self, sem: Semaphore, pool: asyncpg.Pool,
                      uri: str, title: str, content: str, embedding_content: str) -> None:

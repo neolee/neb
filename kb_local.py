@@ -8,7 +8,11 @@ from pydantic_ai import RunContext
 from pydantic_ai.agent import Agent
 
 from util.fs import list_files
+# BUG the following line cause the infamous `Overriding of current TracerProvider is not allowed` warning
+# cause: `PDFLoader` uses `marker-pdf` and `marker-pdf` uses `transformers`, which uses `opentelemetry` in
+#        a wrong way, see https://github.com/huggingface/transformers/issues/39115
 from rag.text.pdf_loader import PDFLoader
+
 from embedders import snowflake
 from rag.store.base import Section, RAGStore
 
@@ -66,9 +70,8 @@ async def run_agent(question: str):
 ## build the search database
 
 async def prepare_book_content(path: Path) -> list[Section]:
-    file_path = str(path)
-    with logfire.span("Loading data from {file}", file=file_path):
-        loader = PDFLoader(file_path)
+    with logfire.span("loading data from file"):
+        loader = PDFLoader(str(path))
         chunks = loader.chunks(batch_size=10)
         sections = []
         for idx, chunk in enumerate(chunks):
@@ -81,12 +84,16 @@ async def prepare_book_content(path: Path) -> list[Section]:
 
 async def build_search_db():
     """Build the search database."""
+
     parent = "./books"
     paths = list_files(parent, ".pdf")
 
-    for path in paths:
-        sections = await prepare_book_content(path)
-        await kb_store.load(sections)
+    with logfire.span("Loading local books to knowledge store"):
+        for path in paths:
+            with logfire.span("working on {file}", file=str(path)):
+                sections = await prepare_book_content(path)
+                with logfire.span("saving data to knowledge store"):
+                    await kb_store.load(sections)
 
 
 ## put all things together
