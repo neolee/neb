@@ -11,6 +11,7 @@ from util.fs import list_files
 # BUG the following line cause the infamous `Overriding of current TracerProvider is not allowed` warning
 # cause: `PDFLoader` uses `marker-pdf` and `marker-pdf` uses `transformers`, which uses `opentelemetry` in
 #        a wrong way, see https://github.com/huggingface/transformers/issues/39115
+# UPDATE: already fixed in `transformers 4.53.3`
 from rag.text.pdf_loader import PDFLoader
 
 from embedders import snowflake
