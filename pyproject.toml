@@ -10,6 +10,7 @@ dependencies = [
     "ddgs",
     "devtools",
     "fastapi",
+    "googlesearch-python",
     "httpx[socks]",
     "langdetect",
     "logfire[system-metrics]",

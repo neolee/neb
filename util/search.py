@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 
 from ddgs import DDGS
 from tavily import TavilyClient
+import googlesearch as google
 
 
 class WebSearchResult(BaseModel):
@@ -60,3 +61,31 @@ def tavily_search(query: str, max_results: int) -> list[WebSearchResult]:
         )
         for r in response.get("results", [])
     ]
+
+
+def google_search(query: str, max_results: int) -> list[WebSearchResult]:
+    """Perform a web search using Google and return a list of results.
+
+    Args:
+        query (str): The search query to execute.
+        max_results (int): The max count of returning results.
+    Returns:
+        list[WebSearchResult]: list of search results.
+    """
+    results = google.search(query, num_results=max_results, unique=True, advanced=True)
+
+    return [
+        WebSearchResult(
+            title=getattr(r, "title", ""),
+            url=getattr(r, "url", ""),
+            content=getattr(r, "description", ""),
+            summary=""
+        )
+        for r in results
+    ]
+
+
+if __name__ == "__main__":
+    from rich import print
+
+    print(google_search("Pydantic-AI", 5))
