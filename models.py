@@ -16,7 +16,6 @@ openrouter_gemini_pro = model_by_provider_with_model(mal.openrouter_provider, mo
 
 local = model_by_provider(mal.local_provider)
 local_qwen = model_by_provider_with_model(mal.local_provider, model_name="qwen3")
-local_gemma = model_by_provider_with_model(mal.local_provider, model_name="gemma-3")
 
 lmstudio = model_by_provider(mal.lmstudio_provider)
 
