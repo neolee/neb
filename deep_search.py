@@ -280,20 +280,6 @@ reflection_agent = Agent(model=model, output_type=Reflection, system_prompt=refl
 final_summary_agent = Agent(model=model, output_type=FinalSummary, system_prompt=final_summary_instructions)
 
 
-def export_report(report: str, topic: str = "Report") -> None:
-    """Export the report to markdown.
-
-    Args:
-        report (str): The report content in markdown format.
-        topic (str): The topic of the report. Defaults to "Report".
-    """
-    file_name = re.sub(r"[^a-zA-Z0-9]", "_", topic).lower()
-    path_md = os.path.join(report_output_path, f"{file_name}.md")
-    with open(path_md, "w", encoding="utf-8") as f:
-        f.write(report)
-
-
-
 ## nodes
 # pyright: reportUnusedFunction=false
 
@@ -421,7 +407,7 @@ class FinalizeSummary(BaseNode[DeepState]):
         return End("End of deep research workflow.\n\n")
 
 
-# context compression helpers used in summary and reflection
+# helpers
 
 def compress_summary(summary: str) -> list[str]:
     """Extract key terms from summary using simple NLP heuristics"""
@@ -443,6 +429,19 @@ def get_research_context(state: DeepState) -> str:
     for aspect, terms in state.aspect_registry.items():
         context_lines.append(f"- {aspect}: {', '.join(terms[:3])}")
     return "\n".join(context_lines)
+
+
+def export_report(report: str, topic: str = "Report") -> None:
+    """Export the report to markdown.
+
+    Args:
+        report (str): The report content in markdown format.
+        topic (str): The topic of the report. Defaults to "Report".
+    """
+    file_name = re.sub(r"[^a-zA-Z0-9]", "_", topic).lower()
+    path_md = os.path.join(report_output_path, f"{file_name}.md")
+    with open(path_md, "w", encoding="utf-8") as f:
+        f.write(report)
 
 
 ## workflow
