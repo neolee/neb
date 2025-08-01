@@ -12,14 +12,14 @@ import models as m
 # more info: https://github.com/pydantic/pydantic-ai/blob/main/mcp-run-python/README.md
 
 server_sse = MCPServerSSE(url='http://localhost:3001/sse')
-agent_sse = Agent(m.default, mcp_servers=[server_sse])
+agent_sse = Agent(m.default, toolsets=[server_sse])
 
 server_stdio = MCPServerStdio('npx', ['-y', '@pydantic/mcp-run-python', 'stdio'])
-agent_stdio = Agent(m.default, mcp_servers=[server_stdio])
+agent_stdio = Agent(m.default, toolsets=[server_stdio])
 
 async def run(agent):
     async with agent.run_mcp_servers():
-        result = await agent.run('How many days between 2000-01-01 and 2025-07-13?')
+        result = await agent.run('How many days between 2000-01-01 and 2025-08-01?')
     print(result.output)
 
 

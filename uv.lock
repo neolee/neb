@@ -1044,6 +1044,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+asyncpg = [
+    { name = "opentelemetry-instrumentation-asyncpg" },
+]
 system-metrics = [
     { name = "opentelemetry-instrumentation-system-metrics" },
 ]
@@ -1447,7 +1450,7 @@ dependencies = [
     { name = "googlesearch-python" },
     { name = "httpx", extra = ["socks"] },
     { name = "langdetect" },
-    { name = "logfire", extra = ["system-metrics"] },
+    { name = "logfire", extra = ["asyncpg", "system-metrics"] },
     { name = "marker-pdf" },
     { name = "pydantic-ai-slim", extra = ["logfire", "mcp", "openai"] },
     { name = "pydantic-graph" },
@@ -1468,7 +1471,7 @@ requires-dist = [
     { name = "googlesearch-python" },
     { name = "httpx", extras = ["socks"] },
     { name = "langdetect" },
-    { name = "logfire", extras = ["system-metrics"] },
+    { name = "logfire", extras = ["asyncpg", "system-metrics"] },
     { name = "marker-pdf" },
     { name = "pydantic-ai-slim", extras = ["logfire", "openai", "mcp"] },
     { name = "pydantic-graph" },
@@ -1859,6 +1862,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/12/37/cf17cf28f945a3aca5a038cfbb45ee01317d4f7f3a0e5209920883fe9b08/opentelemetry_instrumentation-0.57b0.tar.gz", hash = "sha256:f2a30135ba77cdea2b0e1df272f4163c154e978f57214795d72f40befd4fcf05", size = 30807, upload-time = "2025-07-29T15:42:44.746Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/6f/f20cd1542959f43fb26a5bf9bb18cd81a1ea0700e8870c8f369bd07f5c65/opentelemetry_instrumentation-0.57b0-py3-none-any.whl", hash = "sha256:9109280f44882e07cec2850db28210b90600ae9110b42824d196de357cbddf7e", size = 32460, upload-time = "2025-07-29T15:41:40.883Z" },
+]
+
+[[package]]
+name = "opentelemetry-instrumentation-asyncpg"
+version = "0.57b0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-semantic-conventions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/40/90/965f8b99b4a5550ceae560002c6c90e840a6d02e2dc3b869e5efdbc91772/opentelemetry_instrumentation_asyncpg-0.57b0.tar.gz", hash = "sha256:acd6c414afb8e1e3b18848aa7e44c19a0bdf47a9a83ca8c31d0322ec48bf66c6", size = 8726, upload-time = "2025-07-29T15:42:50.29Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d3/3e/079acb8402c4fde6050f6a9bb44988eadc697f2e047e7bebebea44442b37/opentelemetry_instrumentation_asyncpg-0.57b0-py3-none-any.whl", hash = "sha256:4c37a839f3604bbb0baae80fd8b4a02fbb1fab3cc914d561e234f7dfafbdf7e2", size = 10087, upload-time = "2025-07-29T15:41:51.763Z" },
 ]
 
 [[package]]

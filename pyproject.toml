@@ -13,7 +13,7 @@ dependencies = [
     "googlesearch-python",
     "httpx[socks]",
     "langdetect",
-    "logfire[system-metrics]",
+    "logfire[asyncpg,system-metrics]",
     "marker-pdf",
     "pydantic-ai-slim[logfire,openai,mcp]",
     "pydantic-graph",
