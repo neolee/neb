@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import chromadb
 import logfire
 
-from mal.openai.embedder import Embedder
+from mal.adapter.openai import Embedder
 from rag.store.base import Section, RAGStore
 
 
