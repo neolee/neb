@@ -15,6 +15,7 @@ dependencies = [
     "langdetect",
     "logfire[asyncpg,system-metrics]",
     "marker-pdf",
+    "pip",
     "pydantic-ai-slim[logfire,openai,mcp]",
     "pydantic-graph",
     "python-multipart",
