@@ -40,9 +40,9 @@ async def main():
         ) as result:
             console.print("Response:", style="green")
 
-            async for message, last in result.stream_structured(debounce_by=0.01):
+            async for message, last in result.stream_responses(debounce_by=0.01):
                 try:
-                    whales = await result.validate_structured_output(
+                    whales = await result.validate_response_output(
                         message, allow_partial=not last
                     )
                 except ValidationError as exc:
