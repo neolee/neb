@@ -5,7 +5,6 @@ from pydantic_ai.mcp import MCPServerStdio
 from pydantic_ai.mcp import MCPServerStreamableHTTP
 
 import models as m
-
 import instrument
 instrument.init()
 
@@ -16,7 +15,6 @@ agent_stdio = Agent(m.default, toolsets=[server_stdio])
 # info: https://github.com/pydantic/mcp-run-python
 # before running the client code ensure running the server using:
 # uvx mcp-run-python --port 3001 streamable-http
-# BUG for now: Client error '426 Upgrade Required'
 server_http = MCPServerStreamableHTTP(url="http://localhost:3001/mcp")
 agent_http = Agent(m.default, toolsets=[server_http])
 
