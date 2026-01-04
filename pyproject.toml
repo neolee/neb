@@ -25,6 +25,9 @@ dependencies = [
     "uvicorn",
 ]
 
+[tool.ruff.lint]
+ignore = ["E402", "E701", "F403", "F405"]
+
 [tool.logfire]
 project_name = "neb-logfire"
 service_name = "neb"
