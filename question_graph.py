@@ -7,17 +7,14 @@ instrument.init()
 
 from pydantic import BaseModel
 
+from pydantic_ai import Agent, ModelMessage, format_as_xml
 from pydantic_graph import BaseNode, End, Graph, GraphRunContext
 from pydantic_graph.persistence.file import FileStatePersistence
-
-from pydantic_ai import Agent
-from pydantic_ai import format_as_xml
-from pydantic_ai.messages import ModelMessage
 
 import models as m
 
 
-ask_agent = Agent(m.default, output_type=str)
+ask_agent: Agent[None, str] = Agent(m.default, output_type=str)
 
 
 @dataclass
@@ -26,36 +23,39 @@ class QuestionState:
     ask_agent_messages: list[ModelMessage] = field(default_factory=list)
     evaluate_agent_messages: list[ModelMessage] = field(default_factory=list)
 
+
 @dataclass
-class Ask(BaseNode[QuestionState]):
+class Ask(BaseNode[QuestionState, None, str]):
     async def run(self, ctx: GraphRunContext[QuestionState]) -> Answer:
         result = await ask_agent.run(
-            'Ask a simple question with a single correct answer.',
+            "Ask a simple question with a single correct answer.",
             message_history=ctx.state.ask_agent_messages,
         )
         ctx.state.ask_agent_messages += result.all_messages()
         ctx.state.question = result.output
         return Answer(result.output)
 
+
 @dataclass
-class Answer(BaseNode[QuestionState]):
+class Answer(BaseNode[QuestionState, None, str]):
     question: str
 
     async def run(self, ctx: GraphRunContext[QuestionState]) -> Evaluate:
-        answer = input(f'{self.question}: ')
+        answer = input(f"{self.question}: ")
         return Evaluate(answer)
 
 
-class EvaluationResult(BaseModel, use_attribute_docstrings=True):
+class EvaluationOutput(BaseModel, use_attribute_docstrings=True):
     correct: bool
     """Whether the answer is correct."""
     comment: str
     """Comment on the answer, reprimand the user if the answer is wrong."""
 
-evaluate_agent = Agent(
-    m.default,
-    output_type=EvaluationResult,
-    system_prompt='Given a question and answer, evaluate if the answer is correct.',
+
+evaluate_agent: Agent[None, EvaluationOutput] = Agent(
+    model=m.default,
+    output_type=EvaluationOutput,
+    system_prompt="Given a question and answer, evaluate if the answer is correct.",
 )
 
 
@@ -69,7 +69,7 @@ class Evaluate(BaseNode[QuestionState, None, str]):
     ) -> End[str] | Reprimand:
         assert ctx.state.question is not None
         result = await evaluate_agent.run(
-            format_as_xml({'question': ctx.state.question, 'answer': self.answer}),
+            format_as_xml({"question": ctx.state.question, "answer": self.answer}),
             message_history=ctx.state.evaluate_agent_messages,
         )
         ctx.state.evaluate_agent_messages += result.all_messages()
@@ -78,18 +78,21 @@ class Evaluate(BaseNode[QuestionState, None, str]):
         else:
             return Reprimand(result.output.comment)
 
+
 @dataclass
-class Reprimand(BaseNode[QuestionState]):
+class Reprimand(BaseNode[QuestionState, None, str]):
     comment: str
 
     async def run(self, ctx: GraphRunContext[QuestionState]) -> Ask:
-        print(f'Comment: {self.comment}')
+        print(f"Comment: {self.comment}")
         ctx.state.question = None
         return Ask()
 
 
-question_graph = Graph(
-    nodes=(Ask, Answer, Evaluate, Reprimand), state_type=QuestionState
+question_graph: Graph[QuestionState, None, str] = Graph(
+    nodes=(Ask, Answer, Evaluate, Reprimand),
+    state_type=QuestionState,
+    run_end_type=str,
 )
 
 
@@ -97,11 +100,11 @@ async def run_as_continuous():
     state = QuestionState()
     node = Ask()
     end = await question_graph.run(node, state=state)
-    print('END:', end.output)
+    print("END:", end.output)
 
 
 async def run_as_cli(answer: str | None):
-    persistence = FileStatePersistence(Path('question_graph.json'))
+    persistence = FileStatePersistence(Path("question_graph.json"))
     persistence.set_graph_types(question_graph)
 
     if snapshot := await persistence.load_next():
@@ -118,10 +121,10 @@ async def run_as_cli(answer: str | None):
         while True:
             node = await run.next()
             if isinstance(node, End):
-                print('END:', node.data)
+                print("END:", node.data)
                 history = await persistence.load_all()
-                print('history:', '\n'.join(str(e.node) for e in history), sep='\n')
-                print('Finished!')
+                print("history:", "\n".join(str(e.node) for e in history), sep="\n")
+                print("Finished!")
                 break
             elif isinstance(node, Answer):
                 print(node.question)
@@ -129,28 +132,28 @@ async def run_as_cli(answer: str | None):
             # otherwise just continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import asyncio
     import sys
 
     try:
         sub_command = sys.argv[1]
-        assert sub_command in ('continuous', 'cli', 'mermaid')
+        assert sub_command in ("continuous", "cli", "mermaid")
     except (IndexError, AssertionError):
         print(
-            'Usage:\n'
-            '  uv run question_graph.py mermaid\n'
-            'or:\n'
-            '  uv run question_graph.py continuous\n'
-            'or:\n'
-            '  uv run question_graph.py cli [answer]',
+            "Usage:\n"
+            "  uv run question_graph.py mermaid\n"
+            "or:\n"
+            "  uv run question_graph.py continuous\n"
+            "or:\n"
+            "  uv run question_graph.py cli [answer]",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    if sub_command == 'mermaid':
+    if sub_command == "mermaid":
         print(question_graph.mermaid_code(start_node=Ask))
-    elif sub_command == 'continuous':
+    elif sub_command == "continuous":
         asyncio.run(run_as_continuous())
     else:
         a = sys.argv[2] if len(sys.argv) > 2 else None

@@ -87,7 +87,7 @@ Response: TypeAlias = Union[Success, InvalidRequest]
 sql_gen_agent: Agent[Deps, Response] = Agent(
     model=m.default,
     # type ignore while we wait for PEP-0747, nonetheless unions will work fine everywhere else
-    output_type=Response, # type: ignore
+    output_type=Response,
     deps_type=Deps
 )
 

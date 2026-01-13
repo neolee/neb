@@ -13,6 +13,7 @@ from pydantic_ai import Agent, format_as_xml
 from pydantic_graph import BaseNode, End, Graph, GraphRunContext
 
 import instrument
+
 instrument.init()
 
 import models as m
@@ -232,16 +233,26 @@ Transform multiple research summaries into a cohesive, authoritative report that
 
 ## models
 
+
 class DeepState(BaseModel):
     topic: str = Field(default=default_topic, description="main research topic")
-    search_query: WebSearchQuery | None = Field(default=None, description="single search query for the current loop")
-    search_results: list[WebSearchResult] | None = Field(default=None, description="list of search results in the current loop")
-    search_summaries: list[WebSearchSummary] | None = Field(default=None, description="list of all search summaries of the past loops")
-    reflection: Reflection | None = Field(default=None, description="reflection on the search results of the previous current loop")
+    search_query: WebSearchQuery | None = Field(
+        default=None, description="single search query for the current loop"
+    )
+    search_results: list[WebSearchResult] | None = Field(
+        default=None, description="list of search results in the current loop"
+    )
+    search_summaries: list[WebSearchSummary] | None = Field(
+        default=None, description="list of all search summaries of the past loops"
+    )
+    reflection: Reflection | None = Field(
+        default=None,
+        description="reflection on the search results of the previous current loop",
+    )
     count: int = Field(default=0, description="counter for tracking iteration count")
     aspect_registry: dict[str, list[str]] = Field(
         default_factory=dict,
-        description="track covered aspects and key terms: {aspect: [keywords]}"
+        description="track covered aspects and key terms: {aspect: [keywords]}",
     )
 
 
@@ -262,8 +273,13 @@ class WebSearchSummary(BaseModel):
 
 
 class Reflection(BaseModel):
-    knowledge_gaps: list[str] = Field(..., description="aspects of the topic which require further exploration")
-    covered_topics: list[str] = Field(..., description="aspects of the topic which have already been covered sufficiently")
+    knowledge_gaps: list[str] = Field(
+        ..., description="aspects of the topic which require further exploration"
+    )
+    covered_topics: list[str] = Field(
+        ...,
+        description="aspects of the topic which have already been covered sufficiently",
+    )
 
 
 class FinalSummary(BaseModel):
@@ -274,17 +290,22 @@ class FinalSummary(BaseModel):
 
 model = m.deepseek
 
-query_agent = Agent(model=model, output_type=WebSearchQuery, system_prompt="")
-summary_agent = Agent(model=model, output_type=WebSearchSummary, system_prompt=summary_instructions)
-reflection_agent = Agent(model=model, output_type=Reflection, system_prompt=reflection_instructions)
-final_summary_agent = Agent(model=model, output_type=FinalSummary, system_prompt=final_summary_instructions)
+query_agent: Agent[None, WebSearchQuery] = Agent(
+    model=model, output_type=WebSearchQuery, system_prompt=""
+)
+summary_agent: Agent[None, WebSearchSummary] = Agent(
+    model=model, output_type=WebSearchSummary, system_prompt=summary_instructions
+)
+reflection_agent: Agent[None, Reflection] = Agent(
+    model=model, output_type=Reflection, system_prompt=reflection_instructions
+)
+final_summary_agent: Agent[None, FinalSummary] = Agent(
+    model=model, output_type=FinalSummary, system_prompt=final_summary_instructions
+)
 
-
-## nodes
-# pyright: reportUnusedFunction=false
 
 @dataclass
-class WebSearch(BaseNode[DeepState]):
+class WebSearch(BaseNode[DeepState, None, str]):
     """Web Search node."""
 
     async def run(self, ctx: GraphRunContext[DeepState]) -> SummarizeSearchResults:
@@ -295,7 +316,11 @@ class WebSearch(BaseNode[DeepState]):
             """Add reflection from the previous loop to the system prompt."""
             if ctx.state.reflection:
                 xml = format_as_xml(ctx.state.reflection, root_tag="reflection")
-                return query_instructions_with_reflection + f"Reflection on existing knowledge:\n{xml}\n" + "Provide your response in JSON format."
+                return (
+                    query_instructions_with_reflection
+                    + f"Reflection on existing knowledge:\n{xml}\n"
+                    + "Provide your response in JSON format."
+                )
             else:
                 return query_instructions_without_reflection
 
@@ -308,18 +333,23 @@ class WebSearch(BaseNode[DeepState]):
             new_aspect = result.output.aspect
             if new_aspect in ctx.state.aspect_registry:
                 result = await query_agent.run(
-                    prompt + "\nAvoid duplicating: " + ", ".join(ctx.state.aspect_registry.keys())
+                    prompt
+                    + "\nAvoid duplicating: "
+                    + ", ".join(ctx.state.aspect_registry.keys())
                 )
             ctx.state.search_query = result.output
 
         # run the search
-        ctx.state.search_results = google_search(ctx.state.search_query.query, max_web_search_results)
+        assert ctx.state.search_query is not None
+        ctx.state.search_results = google_search(
+            ctx.state.search_query.query, max_web_search_results
+        )
 
         return SummarizeSearchResults()
 
 
 @dataclass
-class SummarizeSearchResults(BaseNode[DeepState]):
+class SummarizeSearchResults(BaseNode[DeepState, None, str]):
     """Summarize Search Results node."""
 
     async def run(self, ctx: GraphRunContext[DeepState]) -> ReflectOnSearch:
@@ -343,7 +373,7 @@ class SummarizeSearchResults(BaseNode[DeepState]):
                     aspect=summary.output.aspect,
                 )
             )
-            
+
             # compress and register key terms
             key_terms = compress_summary(summary.output.summary)
             ctx.state.aspect_registry[summary.output.aspect] = key_terms
@@ -352,7 +382,7 @@ class SummarizeSearchResults(BaseNode[DeepState]):
 
 
 @dataclass
-class ReflectOnSearch(BaseNode[DeepState]):
+class ReflectOnSearch(BaseNode[DeepState, None, str]):
     """Reflect on Search node."""
 
     async def run(self, ctx: GraphRunContext[DeepState]) -> WebSearch | FinalizeSummary:
@@ -383,10 +413,10 @@ class ReflectOnSearch(BaseNode[DeepState]):
 
 
 @dataclass
-class FinalizeSummary(BaseNode[DeepState]):
+class FinalizeSummary(BaseNode[DeepState, None, str]):
     """Finalize Summary node."""
 
-    async def run(self, ctx: GraphRunContext[DeepState]) -> End[str]: # type: ignore
+    async def run(self, ctx: GraphRunContext[DeepState]) -> End[str]:
         topic = ctx.state.topic
 
         @final_summary_agent.system_prompt
@@ -409,14 +439,15 @@ class FinalizeSummary(BaseNode[DeepState]):
 
 # helpers
 
+
 def compress_summary(summary: str) -> list[str]:
     """Extract key terms from summary using simple NLP heuristics"""
     # implementation notes:
     # 1. remove stopwords
     # 2. extract nouns/proper nouns
     # 3. return top 5 unique terms
-    words = re.findall(r'\b[A-Za-z]{3,}\b', summary.lower())
-    stopwords = set(['the', 'and', 'that', 'this', 'with', 'for', 'are', 'from'])
+    words = re.findall(r"\b[A-Za-z]{3,}\b", summary.lower())
+    stopwords = set(["the", "and", "that", "this", "with", "for", "are", "from"])
     content_words = [w for w in words if w not in stopwords]
     return list(set(content_words))[:5]  # return top 5 unique terms
 
@@ -446,9 +477,14 @@ def export_report(report: str, topic: str = "Report") -> None:
 
 ## workflow
 
+
 async def workflow(topic: str) -> None:
     # define and run the agent graph
-    deep_research = Graph(nodes=[WebSearch, SummarizeSearchResults, ReflectOnSearch, FinalizeSummary])
+    deep_research: Graph[DeepState, None, str] = Graph(
+        nodes=[WebSearch, SummarizeSearchResults, ReflectOnSearch, FinalizeSummary],
+        state_type=DeepState,
+        run_end_type=str,
+    )
 
     await deep_research.run(WebSearch(), state=DeepState(topic=topic, count=1))
 

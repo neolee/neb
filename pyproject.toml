@@ -26,7 +26,10 @@ dependencies = [
 ]
 
 [tool.ruff.lint]
-ignore = ["E402", "E701", "F403", "F405"]
+ignore = ["E402", "E701", "E731", "F403", "F405"]
+
+[tool.ty.src]
+exclude = [".venv", "mal", "local", "books", "ref"]
 
 [tool.logfire]
 project_name = "neb-logfire"

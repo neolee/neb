@@ -32,8 +32,8 @@ class ChromaStore(RAGStore):
         ]
         self.collection.add(
             ids=[section.uri for section in sections],
-            embeddings=embeddings, # type: ignore
-            metadatas=metadatas, # type: ignore
+            embeddings=embeddings,
+            metadatas=metadatas,
             documents=[section.content for section in sections]
         )
 
@@ -44,10 +44,12 @@ class ChromaStore(RAGStore):
         results = self.collection.query(
             query_embeddings=[query_embedding],
             n_results=limit,
-            include=["metadatas", "documents"] # type: ignore
+            include=["metadatas", "documents"]
         )
 
+        if not results: return ""
+            
         return "\n\n".join(
             f"# {meta['title']}\nURI:{meta['uri']}\n\n{doc}\n"
-            for meta, doc in zip(results["metadatas"][0], results["documents"][0]) # type: ignore
+            for meta, doc in zip(results["metadatas"][0], results["documents"][0])
         )
