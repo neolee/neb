@@ -10,6 +10,15 @@ For more information, please refer to MAL [README](https://github.com/neolee/mal
 
 ### RAG (Retrieval-Augmented Generation)
 
+#### Dependencies
+
+Our RAG toolkit uses `spacy` for language inference and text chunking. The pipelines should be setup as below:
+
+``` shell
+uv run spacy download zh_core_web_sm
+uv run spacy download en_core_web_sm
+```
+
 #### RAG Framework
 
 *Under Construction*
