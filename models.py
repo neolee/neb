@@ -7,6 +7,8 @@ deepseek_reasoner = openai_model("deepseek/deepseek-reasoner")
 qwen = openai_model("qwen/qwen-plus-latest")
 qwen_coder = openai_model("qwen/qwen3-coder-plus")
 
+gpt = openai_model("openai")
+
 openrouter_gemini_flash = openai_model("openrouter/google/gemini-3-flash-preview")
 openrouter_gemini_pro = openai_model("openrouter/google/gemini-3-pro-preview")
 
