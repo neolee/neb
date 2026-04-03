@@ -4,8 +4,7 @@ from mal.adapter.pydantic_ai import openai_model
 deepseek = openai_model("deepseek/deepseek-chat")
 deepseek_reasoner = openai_model("deepseek/deepseek-reasoner")
 
-qwen = openai_model("qwen/qwen-plus-latest")
-qwen_coder = openai_model("qwen/qwen3-coder-plus")
+qwen = openai_model("qwen")
 
 gpt = openai_model("openai")
 
