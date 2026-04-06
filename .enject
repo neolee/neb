@@ -1,0 +1,8 @@
+version = 1
+
+[project]
+name = "neb"
+
+[[rules.command]]
+match.argv_prefix = ["uv", "run"]
+inject.groups = ["llm", "local_llm", "search", "misc"]
