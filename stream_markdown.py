@@ -15,7 +15,7 @@ instrument.init()
 
 coding_agent = Agent()
 
-models = [m.deepseek, m.qwen_coder]
+models = [m.deepseek_flash, m.qwen]
 
 async def main():
     prettier_code_blocks()

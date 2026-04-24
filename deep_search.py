@@ -288,7 +288,7 @@ class FinalSummary(BaseModel):
 
 ## agents
 
-model = m.deepseek
+model = m.qwen
 
 query_agent: Agent[None, WebSearchQuery] = Agent(
     model=model, output_type=WebSearchQuery, system_prompt=""

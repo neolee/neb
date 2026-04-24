@@ -1,8 +1,8 @@
 from mal.adapter.pydantic_ai import openai_model
 
 
-deepseek = openai_model("deepseek/deepseek-chat")
-deepseek_reasoner = openai_model("deepseek/deepseek-reasoner")
+deepseek_flash = openai_model("deepseek/deepseek-v4-flash")
+deepseek_pro = openai_model("deepseek/deepseek-v4-pro")
 
 qwen = openai_model("qwen/qwen3.5-plus")
 
