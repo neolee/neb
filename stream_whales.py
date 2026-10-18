@@ -28,7 +28,7 @@ class Whale(TypedDict):
     description: NotRequired[Annotated[str, Field(description="Short Description")]]
 
 
-agent = Agent(model=m.default, output_type=list[Whale], instrument=True)
+agent = Agent(model=m.default, output_type=list[Whale])
 
 
 async def main():

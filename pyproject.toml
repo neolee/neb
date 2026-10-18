@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [tool.ruff.lint]
-ignore = ["E402", "E701", "E731", "F403", "F405"]
+ignore = ["E402", "E701", "E731", "F403", "F405", "I001"]
 
 [tool.ty.src]
 exclude = [".venv", "mal", "local", "books", "ref"]

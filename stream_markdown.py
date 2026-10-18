@@ -15,7 +15,7 @@ instrument.init()
 
 coding_agent = Agent()
 
-models = [m.deepseek_flash, m.qwen]
+models = [m.deepseek]
 
 async def main():
     prettier_code_blocks()
@@ -28,7 +28,7 @@ async def main():
             async with coding_agent.run_stream(prompt, model=model) as result:
                 async for message in result.stream_text():
                     live.update(Markdown(message))
-        console.log(result.usage())
+        console.log(result.usage
 
 
 def prettier_code_blocks():
