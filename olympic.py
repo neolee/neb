@@ -9,7 +9,7 @@ class CityLocation(BaseModel):
     country: str
 
 
-agent = Agent(model=m.default, output_type=CityLocation)
+agent = Agent(model=m.gpt, output_type=CityLocation)
 result = agent.run_sync('Where were the olympics held in 2012?')
 print(result)
 print(type(result.output))

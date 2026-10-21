@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel, Field
 
 from pydantic_ai import Agent, format_as_xml
-from pydantic_graph import BaseNode, End, Graph, GraphRunContext
+from pydantic_graph import BaseNode, End, GraphBuilder, GraphRunContext
 
 import instrument
 
@@ -234,28 +234,6 @@ Transform multiple research summaries into a cohesive, authoritative report that
 ## models
 
 
-class DeepState(BaseModel):
-    topic: str = Field(default=default_topic, description="main research topic")
-    search_query: WebSearchQuery | None = Field(
-        default=None, description="single search query for the current loop"
-    )
-    search_results: list[WebSearchResult] | None = Field(
-        default=None, description="list of search results in the current loop"
-    )
-    search_summaries: list[WebSearchSummary] | None = Field(
-        default=None, description="list of all search summaries of the past loops"
-    )
-    reflection: Reflection | None = Field(
-        default=None,
-        description="reflection on the search results of the previous current loop",
-    )
-    count: int = Field(default=0, description="counter for tracking iteration count")
-    aspect_registry: dict[str, list[str]] = Field(
-        default_factory=dict,
-        description="track covered aspects and key terms: {aspect: [keywords]}",
-    )
-
-
 class WebSearchQuery(BaseModel):
     query: str = Field(..., description="search query")
     aspect: str = Field(..., description="aspect of the topic being researched")
@@ -286,19 +264,39 @@ class FinalSummary(BaseModel):
     summary: str = Field(..., description="summary of the topic for the final report")
 
 
+class DeepState(BaseModel):
+    topic: str = Field(default=default_topic, description="main research topic")
+    search_query: WebSearchQuery | None = Field(
+        default=None, description="single search query for the current loop"
+    )
+    search_results: list[WebSearchResult] | None = Field(
+        default=None, description="list of search results in the current loop"
+    )
+    search_summaries: list[WebSearchSummary] | None = Field(
+        default=None, description="list of all search summaries of the past loops"
+    )
+    reflection: Reflection | None = Field(
+        default=None,
+        description="reflection on the search results of the previous current loop",
+    )
+    count: int = Field(default=0, description="counter for tracking iteration count")
+    aspect_registry: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description="track covered aspects and key terms: {aspect: [keywords]}",
+    )
+
+
 ## agents
 
-model = m.default
+model = m.gpt
 
 query_agent: Agent[None, WebSearchQuery] = Agent(
-    model=model, output_type=WebSearchQuery, system_prompt=""
+    model=model, output_type=WebSearchQuery
 )
 summary_agent: Agent[None, WebSearchSummary] = Agent(
     model=model, output_type=WebSearchSummary, system_prompt=summary_instructions
 )
-reflection_agent: Agent[None, Reflection] = Agent(
-    model=model, output_type=Reflection, system_prompt=reflection_instructions
-)
+reflection_agent: Agent[None, Reflection] = Agent(model=model, output_type=Reflection)
 final_summary_agent: Agent[None, FinalSummary] = Agent(
     model=model, output_type=FinalSummary, system_prompt=final_summary_instructions
 )
@@ -308,26 +306,24 @@ final_summary_agent: Agent[None, FinalSummary] = Agent(
 class WebSearch(BaseNode[DeepState, None, str]):
     """Web Search node."""
 
-    async def run(self, ctx: GraphRunContext[DeepState]) -> SummarizeSearchResults:
+    async def run(
+        self, ctx: GraphRunContext[DeepState, None]
+    ) -> SummarizeSearchResults:
         topic = ctx.state.topic
 
-        @query_agent.system_prompt
-        def add_reflection() -> str:
-            """Add reflection from the previous loop to the system prompt."""
-            if ctx.state.reflection:
-                xml = format_as_xml(ctx.state.reflection, root_tag="reflection")
-                return (
-                    query_instructions_with_reflection
-                    + f"Reflection on existing knowledge:\n{xml}\n"
-                    + "Provide your response in JSON format."
-                )
-            else:
-                return query_instructions_without_reflection
+        instructions = query_instructions_without_reflection
+        if ctx.state.reflection:
+            xml = format_as_xml(ctx.state.reflection, root_tag="reflection")
+            instructions = (
+                query_instructions_with_reflection
+                + f"Reflection on existing knowledge:\n{xml}\n"
+                + "Provide your response in JSON format."
+            )
 
         # generate the query
         async with query_agent:
             prompt = f"Please generate a web search query for the following topic: <TOPIC>{topic}</TOPIC>"
-            result = await query_agent.run(prompt)
+            result = await query_agent.run(prompt, instructions=instructions)
 
             # validate new aspect doesn't duplicate coverage
             new_aspect = result.output.aspect
@@ -335,7 +331,8 @@ class WebSearch(BaseNode[DeepState, None, str]):
                 result = await query_agent.run(
                     prompt
                     + "\nAvoid duplicating: "
-                    + ", ".join(ctx.state.aspect_registry.keys())
+                    + ", ".join(ctx.state.aspect_registry.keys()),
+                    instructions=instructions,
                 )
             ctx.state.search_query = result.output
 
@@ -352,17 +349,14 @@ class WebSearch(BaseNode[DeepState, None, str]):
 class SummarizeSearchResults(BaseNode[DeepState, None, str]):
     """Summarize Search Results node."""
 
-    async def run(self, ctx: GraphRunContext[DeepState]) -> ReflectOnSearch:
-        @summary_agent.system_prompt
-        def add_web_search_results() -> str:
-            """Add web search results to the system prompt."""
-            xml = format_as_xml(ctx.state.search_results, root_tag="search_results")
-            return f"List of web search results:\n{xml}"
+    async def run(self, ctx: GraphRunContext[DeepState, None]) -> ReflectOnSearch:
+        xml = format_as_xml(ctx.state.search_results, root_tag="search_results")
 
         # generate the summary
         async with summary_agent:
             summary = await summary_agent.run(
-                user_prompt=f"Please summarize the provided web search results for the topic <TOPIC>{ctx.state.topic}</TOPIC>."
+                user_prompt=f"Please summarize the provided web search results for the topic <TOPIC>{ctx.state.topic}</TOPIC>.",
+                instructions=f"List of web search results:\n{xml}",
             )
 
             # append the summary to the list of all search summaries
@@ -385,21 +379,19 @@ class SummarizeSearchResults(BaseNode[DeepState, None, str]):
 class ReflectOnSearch(BaseNode[DeepState, None, str]):
     """Reflect on Search node."""
 
-    async def run(self, ctx: GraphRunContext[DeepState]) -> WebSearch | FinalizeSummary:
+    async def run(
+        self, ctx: GraphRunContext[DeepState, None]
+    ) -> WebSearch | FinalizeSummary:
         # flow control: should we ponder on the next web search or compile the final report?
         if ctx.state.count < max_research_loops:
             ctx.state.count += 1
 
-            @reflection_agent.system_prompt
-            def add_research_context() -> str:
-                """Add compressed context to reflection prompt"""
-                context = get_research_context(ctx.state)
-                return reflection_instructions.replace("{context}", context)
-
             # reflect on the summaries so far
+            context = get_research_context(ctx.state)
             async with reflection_agent:
                 reflection = await reflection_agent.run(
-                    user_prompt=f"Please reflect on the provided web search summaries for the topic <TOPIC>{ctx.state.topic}</TOPIC>."
+                    user_prompt=f"Please reflect on the provided web search summaries for the topic <TOPIC>{ctx.state.topic}</TOPIC>.",
+                    instructions=reflection_instructions.replace("{context}", context),
                 )
 
                 ctx.state.reflection = Reflection(
@@ -416,19 +408,15 @@ class ReflectOnSearch(BaseNode[DeepState, None, str]):
 class FinalizeSummary(BaseNode[DeepState, None, str]):
     """Finalize Summary node."""
 
-    async def run(self, ctx: GraphRunContext[DeepState]) -> End[str]:
+    async def run(self, ctx: GraphRunContext[DeepState, None]) -> End[str]:
         topic = ctx.state.topic
 
-        @final_summary_agent.system_prompt
-        def add_compressed_history() -> str:
-            """Add compressed context to final prompt"""
-            context = get_research_context(ctx.state)
-            return f"{final_summary_instructions}\n\n{context}"
-
         # finalize the summary of the entire report
+        context = get_research_context(ctx.state)
         async with final_summary_agent:
             final_summary = await final_summary_agent.run(
-                user_prompt=f"Please summarize all web search summaries for the topic <TOPIC>{ctx.state.topic}</TOPIC>."
+                user_prompt=f"Please summarize all web search summaries for the topic <TOPIC>{ctx.state.topic}</TOPIC>.",
+                instructions=context,
             )
             report = f"## {topic}\n\n" + final_summary.output.summary
 
@@ -447,7 +435,7 @@ def compress_summary(summary: str) -> list[str]:
     # 2. extract nouns/proper nouns
     # 3. return top 5 unique terms
     words = re.findall(r"\b[A-Za-z]{3,}\b", summary.lower())
-    stopwords = set(["the", "and", "that", "this", "with", "for", "are", "from"])
+    stopwords = {"the", "and", "that", "this", "with", "for", "are", "from"}
     content_words = [w for w in words if w not in stopwords]
     return list(set(content_words))[:5]  # return top 5 unique terms
 
@@ -480,13 +468,22 @@ def export_report(report: str, topic: str = "Report") -> None:
 
 async def workflow(topic: str) -> None:
     # define and run the agent graph
-    deep_research: Graph[DeepState, None, str] = Graph(
-        nodes=[WebSearch, SummarizeSearchResults, ReflectOnSearch, FinalizeSummary],
+    builder = GraphBuilder(
+        name="deep_research",
         state_type=DeepState,
-        run_end_type=str,
+        input_type=WebSearch,
+        output_type=str,
     )
+    builder.add(
+        builder.edge_from(builder.start_node).to(WebSearch),
+        builder.node(WebSearch),
+        builder.node(SummarizeSearchResults),
+        builder.node(ReflectOnSearch),
+        builder.node(FinalizeSummary),
+    )
+    graph = builder.build()
 
-    await deep_research.run(WebSearch(), state=DeepState(topic=topic, count=1))
+    await graph.run(state=DeepState(topic=topic, count=1), inputs=WebSearch())
 
 
 if __name__ == "__main__":
